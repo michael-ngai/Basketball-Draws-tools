@@ -1563,6 +1563,8 @@ function showPage(p,btn){
   if(p==='results')renderResultsPage();
 }
 
+// Show loading until Firebase syncs
+document.getElementById('availTable').innerHTML='<tr><td colspan="6" style="padding:1rem;color:#888780;font-size:13px">⟳ Loading data...</td></tr>';
 populateWeekSelects();
 renderAvailTable();
 </script>

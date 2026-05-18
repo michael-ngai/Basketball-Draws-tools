@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCYC Auburn Basketball Draw Tool</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a18;padding:1rem}
+.app{max-width:900px;margin:0 auto;padding:1rem 0}
+.nav{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid #e0ddd5;padding-bottom:0}
+.nav button{background:none;border:none;padding:8px 16px;font-size:14px;font-weight:400;color:#888780;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0}
+.nav button.active{color:#1a1a18;font-weight:500;border-bottom:2px solid #1a1a18}
+.page{display:none}.page.active{display:block}
+.section-title{font-size:13px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.card{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.week-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.week-bar label{font-size:14px;color:#888780}
+.week-bar select{font-size:14px;padding:6px 10px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18}
+.week-bar .week-label{font-size:14px;font-weight:500;color:#1a1a18}
+.avail-table{width:100%;border-collapse:collapse;font-size:13px}
+.avail-table th{text-align:left;padding:8px 10px;font-weight:500;color:#888780;border-bottom:0.5px solid #e0ddd5}
+.avail-table th.slot-h{text-align:center;min-width:60px}
+.avail-table td{padding:6px 10px;border-bottom:0.5px solid #e0ddd5}
+.avail-table td.team-cell{font-weight:500;white-space:nowrap}
+.avail-table td.slot-cell{text-align:center}
+.div-header td{background:#f5f5f3;font-weight:500;font-size:12px;color:#888780;padding:4px 10px;letter-spacing:.04em}
+.cb{width:16px;height:16px;cursor:pointer;accent-color:#1D9E75}
+.btn{padding:8px 18px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18;font-size:14px;cursor:pointer;font-weight:500}
+.btn:hover{background:#f5f5f3}
+.btn.primary{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.btn.primary:hover{background:#0F6E56}
+.btn-row{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
+.draw-output{margin-top:1.5rem}
+.draw-game{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:0.5px solid #e0ddd5;margin-bottom:8px;background:#fff}
+.draw-game .time{font-size:12px;font-weight:500;color:#888780;min-width:48px}
+.draw-game .court{font-size:11px;padding:2px 8px;border-radius:20px;background:#f5f5f3;color:#888780;min-width:56px;text-align:center}
+.draw-game .matchup{font-size:14px;font-weight:500;flex:1}
+.draw-game .div-badge{font-size:11px;padding:2px 8px;border-radius:20px;min-width:40px;text-align:center}
+.u10-badge{background:#E1F5EE;color:#085041}
+.u12-badge{background:#E6F1FB;color:#0C447C}
+.u14-badge{background:#FAEEDA;color:#633806}
+.flag-box{border-left:3px solid #E24B4A;padding:10px 14px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px;color:#1a1a18}
+.flag-box .flag-title{font-weight:500;color:#A32D2D;margin-bottom:4px;font-size:12px}
+.standings-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:600px){.standings-wrap{grid-template-columns:1fr}}
+.std-table{width:100%;border-collapse:collapse;font-size:13px}
+.std-table th{padding:6px 8px;text-align:left;font-weight:500;font-size:12px;color:#888780;border-bottom:0.5px solid #e0ddd5}
+.std-table td{padding:6px 8px;border-bottom:0.5px solid #e0ddd5}
+.std-table tr:last-child td{border-bottom:none}
+.rank{font-weight:500;color:#888780;font-size:12px}
+.season-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem}
+.week-chip{padding:6px 4px;border-radius:8px;border:0.5px solid #e0ddd5;text-align:center;font-size:12px;cursor:pointer;background:#fff}
+.week-chip.done{background:#E1F5EE;border-color:#5DCAA5;color:#085041}
+.week-chip.current{border:2px solid #1D9E75;font-weight:500}
+.week-chip.finals{background:#FAEEDA;border-color:#EF9F27;color:#412402}
+.result-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.result-row .matchup-label{font-size:13px;flex:1;min-width:140px}
+.result-row input[type=number]{width:52px;text-align:center;padding:5px 8px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18;font-size:14px}
+.vs-sep{font-size:12px;color:#888780}
+.empty-state{text-align:center;padding:2rem;color:#888780;font-size:14px}
+.metric-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem}
+.metric{background:#f5f5f3;border-radius:8px;padding:10px 16px;min-width:80px;text-align:center}
+.metric .mlabel{font-size:12px;color:#888780;margin-bottom:2px}
+.metric .mval{font-size:22px;font-weight:500}
+.no-games-msg{font-size:13px;color:#888780;padding:8px 0}
+.edit-row{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;border:0.5px solid #e0ddd5;margin-bottom:6px;background:#fff;flex-wrap:wrap}
+.edit-row select{font-size:13px;padding:4px 8px;border-radius:6px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18}
+.edit-row .edit-del{padding:4px 10px;border-radius:6px;border:0.5px solid #F0959580;background:#FCEBEB;color:#A32D2D;font-size:12px;cursor:pointer}
+.edit-row .edit-del:hover{background:#F7C1C1}
+.edit-row .edit-save{padding:4px 10px;border-radius:6px;border:0.5px solid #1D9E75;background:#E1F5EE;color:#085041;font-size:12px;cursor:pointer}
+.edit-row .edit-save:hover{background:#9FE1CB}
+h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>PCYC Auburn — Junior Basketball Draw Tool</h1>
+<div class="nav">
+  <button class="active" onclick="showPage('draw',this)">Weekly draw</button>
+  <button onclick="showPage('results',this)">Enter results</button>
+  <button onclick="showPage('standings',this)">Standings</button>
+  <button onclick="showPage('season',this)">Season tracker</button>
+  <button onclick="showPage('rules',this)">Rules</button>
+</div>
+
+<div id="page-rules" class="page">
+  <div class="card">
+    <div class="section-title">Draw rules</div>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Games per week</div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Each division plays every Friday. The number of games per week depends on team count:</p>
+    <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
+      <li><b>Even number of teams:</b> games = total teams ÷ 2</li>
+      <li><b>Odd number of teams:</b> games = (total teams + 1) ÷ 2</li>
+    </ul>
+    <p style="font-size:12px;color:#888780">Current: U10 = 2 games, U12 = 2 games, U14 = 3 games per week.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Courts</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">There are 2 courts — Court 1 and Court 2. Both can run games at the same time slot.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">No double-booking</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">No team can play 2 games at the same time slot. This is a hard rule and cannot be overridden.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Fill-in team <span style="font-size:11px;color:#BA7517;background:#FAEEDA;padding:1px 7px;border-radius:20px;font-weight:400;margin-left:4px">(Fill-in)</span></div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">When a division has an odd number of teams, one team per week plays an extra game as a fill-in. For example with teams A, B, C:</p>
+    <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
+      <li>Round robin game: A vs B</li>
+      <li>C would have a bye — to keep it fair, A or B plays C as a fill-in</li>
+      <li>The fill-in team's <b>extra game only</b> is labelled (Fill-in). Their round robin game has no label.</li>
+    </ul>
+    <p style="font-size:12px;color:#888780">Max appearances per team per week: 2 (once in RR, once as fill-in).</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Round robin order</div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Round robin games are scheduled before fill-in games each week. The tool tries to avoid repeating the same matchup 2 weeks in a row. If unavoidable due to availability, it allows it but compensates in future weeks so each team plays each other an equal number of times overall. This is a soft rule.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Scheduling priority</div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">When multiple games compete for the same slot, the tool prioritises:</p>
+    <ol style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
+      <li>Most constrained matchup first (fewest shared available time slots)</li>
+      <li>If equal constraint — youngest division first: U10 → U12 → U14</li>
+    </ol>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Back-to-back games (no gaps)</div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">All games should be scheduled consecutively with no empty slots in between. This keeps referees busy without waiting. The tool generates:</p>
+    <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
+      <li><b>Option 1 (preferred):</b> No gaps — all games back-to-back</li>
+      <li><b>Option 2+:</b> Has a gap — flagged with ⚠️ warning. Requires your approval before saving.</li>
+    </ul>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Start time</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">The tool prefers to start games at <b>4:45pm or 5:30pm</b>. If no teams are available at those times, it will use <b>6:15pm or 7:00pm</b> freely — any slot is valid as long as the team is available.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Same-club scheduling <span style="font-size:11px;color:#A32D2D;font-weight:400;background:#FCEBEB;padding:1px 7px;border-radius:20px;margin-left:4px">Hard rule (except GSA)</span></div>
+    <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Teams from the same club (e.g. Silverfang U10, Silverfang U12) must never be scheduled at the same time slot on different courts — a coach cannot be in two places at once.</p>
+    <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
+      <li><b>No same-time clash:</b> Hard rule — the tool will never place two same-club games at the same time. If it cannot avoid it (no other slot works), it flags a conflict for you to fix manually.</li>
+      <li><b>Games in a row:</b> Soft rule — same-club games are scheduled consecutively where possible so the coach doesn't wait. A gap is flagged with ℹ️ if unavoidable.</li>
+    </ul>
+    <p style="font-size:12px;color:#888780">GSA is exempt from both rules (they have multiple coaches). Club names are detected from the team name pattern: <i>Age Group → Club → Team Name</i>.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Options shown</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">The tool always generates multiple draw options for you to choose from. If all options have issues, all are shown with conflicts explained so you can pick the best one and fix it manually in Season Tracker.</p>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Season rules</div>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:4px 0 6px">Season dates</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">Season runs <b>1 May 2026 – 14 August 2026</b>, every Friday. No games on <b>17 July</b> and <b>24 July</b> (winter school holidays).</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Regular rounds</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">Weeks 1–12 are regular rounds.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Week 13 — Semi finals</div>
+    <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
+      <li><b>3 teams or less:</b> No semi finals. Top 2 go straight to grand final in week 14.</li>
+      <li><b>4 teams or more:</b> Top 4 play semi finals (1st vs 4th, 2nd vs 3rd).</li>
+      <li>Teams that don't make semis still play a makeup game.</li>
+    </ul>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Week 14 — Grand finals</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">All divisions play their grand final. Teams that don't make the final play a makeup game.</p>
+
+    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Finals game ordering</div>
+    <p style="font-size:13px;color:#444;line-height:1.7">In weeks 13 and 14, if a team plays both a finals game and a makeup game, the <b>finals game is scheduled first</b> (earlier slot). This lets players put their best effort into the important game while fresh. The makeup game goes second. If this isn't possible due to availability, it's flagged.</p>
+  </div>
+</div>
+
+<div id="page-draw" class="page active">
+  <div class="week-bar">
+    <label>Week</label>
+    <select id="weekSelect" onchange="weekChanged()"></select>
+    <span class="week-label" id="weekDateLabel"></span>
+  </div>
+  <div class="card">
+    <div class="section-title">Team availability — tick available slots</div>
+    <div style="overflow-x:auto">
+    <table class="avail-table" id="availTable"></table>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="generateDraw()">Generate draw</button>
+      <button class="btn" onclick="clearAvail()">Clear all</button>
+      <button class="btn" onclick="allAvail()">All available</button>
+    </div>
+  </div>
+  <div id="drawOutput" class="draw-output"></div>
+</div>
+
+<div id="page-results" class="page">
+  <div class="week-bar">
+    <label>Week</label>
+    <select id="weekSelectR" onchange="weekChangedR()"></select>
+    <span class="week-label" id="weekDateLabelR"></span>
+  </div>
+  <div class="card" id="resultsCard">
+    <div class="section-title">Enter scores</div>
+    <div id="resultsBody"></div>
+    <div class="btn-row"><button class="btn primary" onclick="saveResults()">Save results</button></div>
+  </div>
+</div>
+
+<div id="page-standings" class="page">
+  <div class="standings-wrap" id="standingsWrap"></div>
+</div>
+
+<div id="page-season" class="page">
+  <div class="metric-row" id="metricRow"></div>
+  <div class="section-title">Season overview — click week to view draw</div>
+  <div class="season-grid" id="seasonGrid"></div>
+  <div class="card" id="weekDetailCard" style="display:none">
+    <div class="section-title" id="weekDetailTitle"></div>
+    <div id="weekDetailBody"></div>
+  </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="section-title">Data recovery</div>
+    <p style="font-size:13px;color:#888780;margin-bottom:10px">If your ticks or draws are missing, click below to scan all saved data in this browser and recover it.</p>
+    <div class="btn-row">
+      <button class="btn" onclick="scanAllData()">Scan browser data</button>
+      <button class="btn" onclick="exportData()">Export current data</button>
+      <button class="btn" onclick="importData()">Import data</button>
+    </div>
+    <div id="recoveryOutput" style="margin-top:12px;font-size:12px;font-family:monospace"></div>
+  </div>
+</div>
+</div>
+
+<script>
+const SKIP_DATES = ['17/7/2026','24/7/2026'];
+function buildWeekDates(){
+  const dates=[];
+  const d=new Date(2026,4,1);
+  while(dates.length<14){
+    const key=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    if(!SKIP_DATES.includes(key))dates.push(new Date(d));
+    d.setDate(d.getDate()+7);
+  }
+  return dates;
+}
+const WEEK_DATES=buildWeekDates();
+const SLOTS = ['4:45pm','5:30pm','6:15pm','7:00pm','7:45pm','8:30pm'];
+const VISIBLE_SLOTS = ['4:45pm','5:30pm','6:15pm','7:00pm'];
+const SLOT_LABELS = {'4:45pm':'4:45–5:30pm','5:30pm':'5:30–6:15pm','6:15pm':'6:15–7:00pm','7:00pm':'7:00–7:45pm','7:45pm':'7:45–8:30pm','8:30pm':'8:30–9:15pm'};
+const COURTS = ['Court 1','Court 2'];
+const TOTAL_WEEKS = 14;
+const FINALS_SEMI = 13;
+const FINALS_GRAND = 14;
+
+const TEAMS = {
+  U10:['Free Flow U10','Stingers U10','Silverfang U10'],
+  U12:['Free Flow U12','GSA Apex U12','Silverfang U12'],
+  U14:['GSA PG Boys U14','GSA City Boys U14','Team Renegades U14','GSA Rageb8rs U14','Silverfang U14']
+};
+
+function gamesPerWeek(div){
+  const n=TEAMS[div].length;
+  return n%2===0?n/2:Math.floor((n+1)/2);
+}
+
+function getClub(team){
+  // Pattern: "ClubName AgeGroup" e.g. "Free Flow U10", "GSA Apex U12"
+  // Strip the age group suffix, then extract club name
+  const base=team.replace(/ U\d+$/,'');
+  if(base.startsWith('GSA'))return 'GSA';
+  if(base.startsWith('Free Flow'))return 'Free Flow';
+  if(base.startsWith('Silverfang'))return 'Silverfang';
+  if(base.startsWith('Stingers'))return 'Stingers';
+  if(base.startsWith('Team Renegades'))return 'Team Renegades';
+  return base;
+}
+
+const DIV_COLORS = {U10:'u10-badge',U12:'u12-badge',U14:'u14-badge'};
+
+function getWeekDate(w){return WEEK_DATES[w-1]||WEEK_DATES[WEEK_DATES.length-1];}
+function fmtDate(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});}
+
+function initDB(){
+  if(!localStorage.getItem('pcyc_v8')){
+    // Migrate from v7 if it exists
+    const oldData=localStorage.getItem('pcyc_v7');
+    if(oldData){
+      const old=JSON.parse(oldData);
+      const db={
+        avail:old.avail||{},
+        draws:old.draws||{},
+        results:old.results||{},
+        standings:old.standings||{},
+        dhCount:old.dhCount||{},
+        rrRemaining:old.rrRemaining||generateFullRR()
+      };
+      ['U10','U12','U14'].forEach(div=>{
+        if(!db.standings[div])db.standings[div]={};
+        TEAMS[div].forEach(t=>{
+          if(!db.standings[div][t])db.standings[div][t]={w:0,l:0,d:0,pts:0};
+          if(!db.dhCount[t])db.dhCount[t]=0;
+        });
+      });
+      localStorage.setItem('pcyc_v8',JSON.stringify(db));
+    } else {
+      const db={avail:{},draws:{},results:{},standings:{},dhCount:{}};
+      ['U10','U12','U14'].forEach(div=>{
+        db.standings[div]={};
+        TEAMS[div].forEach(t=>{db.standings[div][t]={w:0,l:0,d:0,pts:0};db.dhCount[t]=0;});
+      });
+      db.rrRemaining=generateFullRR();
+      localStorage.setItem('pcyc_v8',JSON.stringify(db));
+    }
+  }
+  return JSON.parse(localStorage.getItem('pcyc_v8'));
+}
+
+function saveDB(db){localStorage.setItem('pcyc_v8',JSON.stringify(db));}
+
+function generateFullRR(){
+  const rr={U10:[],U12:[],U14:[]};
+  ['U10','U12','U14'].forEach(div=>{
+    const teams=TEAMS[div];
+    for(let i=0;i<teams.length;i++)
+      for(let j=i+1;j<teams.length;j++){
+        rr[div].push([teams[i],teams[j]]);
+        rr[div].push([teams[i],teams[j]]);
+      }
+    shuffle(rr[div]);
+  });
+  return rr;
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+let db=initDB();
+let currentWeek=1;
+let currentWeekR=1;
+
+function populateWeekSelects(){
+  ['weekSelect','weekSelectR'].forEach(id=>{
+    const sel=document.getElementById(id);
+    sel.innerHTML='';
+    for(let w=1;w<=TOTAL_WEEKS;w++){
+      const opt=document.createElement('option');
+      opt.value=w;
+      const suffix=w===FINALS_SEMI?' — Semi Finals':w===FINALS_GRAND?' — Finals':'';
+      opt.textContent='Week '+w+suffix;
+      if(w===currentWeek&&id==='weekSelect')opt.selected=true;
+      if(w===currentWeekR&&id==='weekSelectR')opt.selected=true;
+      sel.appendChild(opt);
+    }
+  });
+  updateWeekLabels();
+}
+
+function updateWeekLabels(){
+  const d=getWeekDate(currentWeek);
+  document.getElementById('weekDateLabel').textContent='Friday '+fmtDate(d);
+  const d2=getWeekDate(currentWeekR);
+  document.getElementById('weekDateLabelR').textContent='Friday '+fmtDate(d2);
+}
+
+function weekChanged(){currentWeek=parseInt(document.getElementById('weekSelect').value);updateWeekLabels();renderAvailTable();document.getElementById('drawOutput').innerHTML='';}
+function weekChangedR(){currentWeekR=parseInt(document.getElementById('weekSelectR').value);updateWeekLabels();renderResultsPage();}
+
+function getAvailKey(w,team,slot){return w+'_'+team+'_'+slot;}
+
+function isFillin(div,team){
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  const divTeams=TEAMS[div];
+  if(divTeams.length%2===0)return false;
+  const avail=divTeams.filter(t=>getAvailSlots(currentWeek,t).length>0);
+  if(avail.length%2!==0)return false;
+  return true;
+}
+
+function renderAvailTable(){
+  const t=document.getElementById('availTable');
+  const VS=VISIBLE_SLOTS;
+  const colCount=VS.length+2;
+  let html='<thead><tr><th>Team</th>';
+  VS.forEach(s=>html+='<th class="slot-h">'+SLOT_LABELS[s]+'</th>');
+  html+='<th class="slot-h" style="color:#1D9E75;font-size:11px">All</th>';
+  html+='</tr></thead><tbody>';
+  ['U10','U12','U14'].forEach(div=>{
+    html+='<tr class="div-header"><td colspan="'+colCount+'">'+div+'</td></tr>';
+    TEAMS[div].forEach(team=>{
+      const sn=shortName(team);
+      html+='<tr><td class="team-cell">'+sn+'</td>';
+      VS.forEach(slot=>{
+        const key=getAvailKey(currentWeek,team,slot);
+        const checked=(db.avail[key]===undefined?false:db.avail[key])?'checked':'';
+        html+='<td class="slot-cell"><input type="checkbox" class="cb avail-cb" '+checked+' data-team="'+escK(team)+'" data-slot="'+slot+'"></td>';
+      });
+      html+='<td class="slot-cell"><input type="checkbox" class="cb row-all" title="Select all for this team" data-team="'+escK(team)+'" style="accent-color:#1D9E75"></td>';
+      html+='</tr>';
+    });
+  });
+  html+='<tr style="border-top:1px solid #e0ddd5"><td style="font-size:12px;font-weight:500;color:#1D9E75;padding:6px 10px">All</td>';
+  VS.forEach(slot=>{
+    html+='<td class="slot-cell"><input type="checkbox" class="cb col-all" title="Select all for this slot" data-slot="'+slot+'" style="accent-color:#1D9E75"></td>';
+  });
+  html+='<td></td></tr>';
+  html+='</tbody>';
+  t.innerHTML=html;
+
+  t.addEventListener('change',function(e){
+    const el=e.target;
+    if(el.classList.contains('avail-cb')){
+      const team=el.dataset.team;
+      const slot=el.dataset.slot;
+      db.avail[getAvailKey(currentWeek,team,slot)]=el.checked;
+      saveDB(db);
+    } else if(el.classList.contains('row-all')){
+      const team=el.dataset.team;
+      VISIBLE_SLOTS.forEach(slot=>{
+        db.avail[getAvailKey(currentWeek,team,slot)]=el.checked;
+      });
+      saveDB(db);
+      renderAvailTable();
+    } else if(el.classList.contains('col-all')){
+      const slot=el.dataset.slot;
+      const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+      allTeams.forEach(team=>{
+        db.avail[getAvailKey(currentWeek,team,slot)]=el.checked;
+      });
+      saveDB(db);
+      renderAvailTable();
+    }
+  });
+}
+
+function shortName(t){
+  const div=t.includes('U10')?'U10':t.includes('U12')?'U12':'U14';
+  return div+': '+t.replace(' U10','').replace(' U12','').replace(' U14','');
+}
+function escK(s){return s.replace(/'/g,"\\'");}
+
+function clearAvail(){
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  allTeams.forEach(team=>VISIBLE_SLOTS.forEach(slot=>{db.avail[getAvailKey(currentWeek,team,slot)]=false;}));
+  saveDB(db);renderAvailTable();
+}
+
+function allAvail(){
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  allTeams.forEach(team=>VISIBLE_SLOTS.forEach(slot=>{db.avail[getAvailKey(currentWeek,team,slot)]=true;}));
+  saveDB(db);renderAvailTable();
+}
+
+function getAvailSlots(week,team){
+  return VISIBLE_SLOTS.filter(s=>{
+    const k=getAvailKey(week,team,s);
+    return db.avail[k]===undefined?false:db.avail[k];
+  });
+}
+
+function bothAvail(week,t1,t2){
+  const a1=new Set(getAvailSlots(week,t1));
+  const a2=new Set(getAvailSlots(week,t2));
+  return VISIBLE_SLOTS.filter(s=>a1.has(s)&&a2.has(s));
+}
+
+function getLastWeekMatchups(w){
+  if(w<=1||!db.draws[w-1])return[];
+  return db.draws[w-1].map(g=>[g.t1,g.t2]);
+}
+
+function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
+  const scheduled=[];
+  const issues=[];
+  const warnings=[];
+  const usedSlots={};
+  const teamBusyAt={};
+  const courtOrder=seed%2===0?['Court 1','Court 2']:['Court 2','Court 1'];
+  const lastWeekMatchups=getLastWeekMatchups(w);
+
+  function isFree(slot,court){return!usedSlots[slot+'|'+court];}
+  function occupy(slot,court,t1,t2){
+    usedSlots[slot+'|'+court]=true;
+    if(!teamBusyAt[t1])teamBusyAt[t1]=new Set();
+    if(!teamBusyAt[t2])teamBusyAt[t2]=new Set();
+    teamBusyAt[t1].add(slot);teamBusyAt[t2].add(slot);
+  }
+  function teamFreeAt(t,s){return!teamBusyAt[t]||!teamBusyAt[t].has(s);}
+  function wasPlayedLastWeek(t1,t2){
+    return lastWeekMatchups.some(([a,b])=>(a===t1&&b===t2)||(a===t2&&b===t1));
+  }
+
+  // Clubs with multiple teams across divisions — only these need coach clash checking
+  const multiTeamClubs=new Set();
+  [...TEAMS.U10,...TEAMS.U12,...TEAMS.U14].forEach(t=>{
+    const club=getClub(t);
+    const count=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14].filter(x=>getClub(x)===club).length;
+    if(count>1) multiTeamClubs.add(club);
+  });
+
+  // Coach clash check: hard rule — same club cannot play at same slot (except GSA)
+  function wouldCoachClash(slot, t1, t2, pendingMatchups){
+    const c1=getClub(t1), c2=getClub(t2);
+    if(c1==='GSA' && c2==='GSA') return false;
+    // Only check clubs that actually have multiple teams
+    const checkC1=multiTeamClubs.has(c1)&&c1!=='GSA';
+    const checkC2=multiTeamClubs.has(c2)&&c2!=='GSA';
+    if(!checkC1&&!checkC2) return false;
+
+    // Check already scheduled games at this slot — hard block
+    const clashInScheduled=scheduled.some(g=>
+      g.slot===slot && (
+        (checkC1 && (getClub(g.t1)===c1||getClub(g.t2)===c1)) ||
+        (checkC2 && (getClub(g.t1)===c2||getClub(g.t2)===c2))
+      )
+    );
+    if(clashInScheduled) return true;
+
+    // Check pending matchups: only block slot S if a same-club pending game
+    // has NO other slot available except S — meaning placing here would force a clash
+    for(const m of pendingMatchups){
+      const mc1=getClub(m.t1), mc2=getClub(m.t2);
+      const sameClubAsT1=checkC1&&multiTeamClubs.has(mc1)&&(mc1===c1||mc2===c1);
+      const sameClubAsT2=checkC2&&multiTeamClubs.has(mc2)&&(mc1===c2||mc2===c2);
+      if(!sameClubAsT1&&!sameClubAsT2) continue;
+      // Only block if this slot is the ONLY option for the pending same-club game
+      const pendingAvail=bothAvail(w,m.t1,m.t2);
+      const otherSlots=pendingAvail.filter(s=>s!==slot);
+      if(pendingAvail.includes(slot) && otherSlots.length===0){
+        // Pending game has no alternative — placing here would guarantee a clash
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function pickSlot(avail, t1, t2, pendingMatchups=[]){
+    const usedSlotNames=[...new Set(Object.keys(usedSlots).map(k=>k.split('|')[0]))];
+    const preferredStarts=['4:45pm','5:30pm'];
+    const orderedSlots=VISIBLE_SLOTS.filter(s=>avail.includes(s));
+
+    // Fix 1: back-to-back means no EMPTY slots between first and last game
+    // A slot with 1 game on 1 court is fine — both courts don't need to be filled
+    // So we prefer partial slots (fill them up) but never BLOCK on needing to fill both courts
+
+    function trySlot(s){
+      if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) return null;
+      // Fix 2+3: hard coach clash check against scheduled AND pending
+      if(wouldCoachClash(s,t1,t2,pendingMatchups)) return null;
+      for(const c of courtOrder){
+        if(isFree(s,c)) return {slot:s, court:c, hasGap:false};
+      }
+      return null;
+    }
+
+    // Pass A: partial slots first (back-to-back preference), no coach clash
+    for(const s of orderedSlots){
+      if(!usedSlotNames.includes(s)) continue;
+      const r=trySlot(s);
+      if(r) return r;
+    }
+
+    // Pass B: new slots — preferred starts first
+    for(const s of orderedSlots){
+      if(usedSlotNames.includes(s)) continue;
+      if(!preferredStarts.includes(s)) continue;
+      const r=trySlot(s);
+      if(r) return r;
+    }
+
+    // Pass C: new slots — later times
+    for(const s of orderedSlots){
+      if(usedSlotNames.includes(s)) continue;
+      if(preferredStarts.includes(s)) continue;
+      const r=trySlot(s);
+      if(r) return r;
+    }
+
+    // Pass D: gap mode — any slot even if creates a gap, still respect coach clash
+    if(allowGap){
+      for(const s of orderedSlots){
+        if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) continue;
+        if(wouldCoachClash(s,t1,t2,[])) continue;
+        for(const c of courtOrder){
+          if(isFree(s,c)) return {slot:s, court:c, hasGap:true};
+        }
+      }
+      // Last resort: allow coach clash too
+      for(const s of orderedSlots){
+        if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) continue;
+        for(const c of courtOrder){
+          if(isFree(s,c)) return {slot:s, court:c, hasGap:true};
+        }
+      }
+    }
+    return null;
+  }
+
+  const debugLog=[];
+
+  function scheduleGame(t1, t2, div, isFillInGame, pendingMatchups=[]){
+    const avail=bothAvail(w,t1,t2);
+    debugLog.push(`<b>[${div}]</b> ${shortName(t1)} vs ${shortName(t2)}${isFillInGame?' (fill-in)':' (RR)'}`);
+    debugLog.push(`&nbsp;&nbsp;Shared avail: <b>${avail.join(', ')||'NONE'}</b>`);
+    debugLog.push(`&nbsp;&nbsp;${shortName(t1)} busy: ${teamBusyAt[t1]?[...teamBusyAt[t1]].join(', '):'free'}`);
+    debugLog.push(`&nbsp;&nbsp;${shortName(t2)} busy: ${teamBusyAt[t2]?[...teamBusyAt[t2]].join(', '):'free'}`);
+    debugLog.push(`&nbsp;&nbsp;Courts taken: ${Object.keys(usedSlots).join(', ')||'none'}`);
+    debugLog.push(`&nbsp;&nbsp;Pending: ${pendingMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)).join(' | ')||'none'}`);
+    // Debug coach clash per slot
+    avail.forEach(s=>{
+      const cc=wouldCoachClash(s,t1,t2,pendingMatchups);
+      if(cc) debugLog.push(`&nbsp;&nbsp;<span style="color:orange">Coach clash at ${s} — blocked</span>`);
+    });
+    if(!avail.length){
+      debugLog.push(`&nbsp;&nbsp;<span style="color:red">FAIL: no shared availability</span>`);
+      issues.push({type:'no_avail',msg:'No shared availability: '+shortName(t1)+' vs '+shortName(t2)+' ('+div+')',div});
+      return false;
+    }
+    const picked=pickSlot(avail,t1,t2,pendingMatchups);
+    if(!picked){
+      const clashSlots=avail.filter(s=>!teamFreeAt(t1,s)||!teamFreeAt(t2,s));
+      const courtFull=avail.filter(s=>teamFreeAt(t1,s)&&teamFreeAt(t2,s)&&!COURTS.some(c=>isFree(s,c)));
+      const coachClash=avail.filter(s=>teamFreeAt(t1,s)&&teamFreeAt(t2,s)&&wouldCoachClash(s,t1,t2,pendingMatchups));
+      let reason='';
+      if(clashSlots.length&&courtFull.length) reason='Team clash AND courts full';
+      else if(clashSlots.length) reason=shortName(t1)+' or '+shortName(t2)+' already playing at: '+clashSlots.join(', ');
+      else if(coachClash.length) reason='Coach clash at all available slots for '+shortName(t1)+' / '+shortName(t2);
+      else reason='Courts full at: '+courtFull.join(', ');
+      debugLog.push(`&nbsp;&nbsp;<span style="color:red">FAIL: ${reason}</span>`);
+      issues.push({type:'no_slot',msg:shortName(t1)+' vs '+shortName(t2)+' ('+div+'): '+reason,div});
+      return false;
+    }
+    if(picked.hasGap){
+      warnings.push({type:'gap',msg:'Gap in schedule',div:'ALL'});
+    }
+    debugLog.push(`&nbsp;&nbsp;<span style="color:green">OK → ${picked.slot} ${picked.court}${picked.hasGap?' ⚠️ gap':''}</span>`);
+    occupy(picked.slot,picked.court,t1,t2);
+    scheduled.push({slot:picked.slot,court:picked.court,t1,t2,div,isFillInGame:!!isFillInGame});
+    return true;
+  }
+
+  const rrWork=JSON.parse(JSON.stringify(rrSnapshot));
+  const globalMatchups=[];
+
+  // Step 1: Build ALL matchups for ALL divisions first
+  ['U10','U12','U14'].forEach(div=>{
+    const gpw=gamesPerWeek(div);
+    const teams=TEAMS[div];
+    const avTeams=teams.filter(t=>getAvailSlots(w,t).length>0);
+    if(avTeams.length<2){issues.push({type:'no_teams',msg:'Not enough available teams in '+div,div});return;}
+    if(!rrWork[div])rrWork[div]=[];
+
+    debugLog.push(`<b>[${div} RR queue]</b> ${rrWork[div].slice(0,6).map(p=>shortName(p[0])+' vs '+shortName(p[1])).join(' | ')||'empty'}`);
+
+    const allMatchups=[];
+    const newRR=[];
+    const rrAppearances={};
+    avTeams.forEach(t=>{rrAppearances[t]=0;});
+
+    const rrSorted=[
+      ...rrWork[div].filter(p=>!wasPlayedLastWeek(p[0],p[1])),
+      ...rrWork[div].filter(p=>wasPlayedLastWeek(p[0],p[1]))
+    ];
+
+    for(const pair of rrSorted){
+      const t1=pair[0],t2=pair[1];
+      const wouldExceed=(rrAppearances[t1]||0)>=1||(rrAppearances[t2]||0)>=1;
+      if(allMatchups.length<gpw&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
+        allMatchups.push({t1,t2,div,isRR:true,isFillInGame:false});
+        rrAppearances[t1]++;rrAppearances[t2]++;
+      } else {
+        newRR.push(pair);
+      }
+    }
+    rrWork[div]=newRR;
+
+    if(allMatchups.length<gpw){
+      const teamAppearances={};
+      avTeams.forEach(t=>{teamAppearances[t]=0;});
+      allMatchups.forEach(m=>{teamAppearances[m.t1]++;teamAppearances[m.t2]++;});
+
+      const notYet=avTeams.filter(t=>teamAppearances[t]===0);
+      const pool=notYet.length>0?notYet:avTeams.slice();
+      const fillInTeam=pool[seed%Math.max(pool.length,1)];
+
+      // others = all available teams except fill-in team
+      const others=avTeams.filter(t=>t!==fillInTeam);
+      if(seed%3===1) others.reverse();
+      else if(seed%3===2&&others.length>1){const x=others.shift();others.push(x);}
+
+      if(others.length>0){
+        allMatchups.push({t1:fillInTeam,t2:others[0],div,isRR:false,isFillInGame:true});
+        teamAppearances[fillInTeam]++;teamAppearances[others[0]]++;
+      }
+      if(allMatchups.length<gpw&&others.length>1){
+        allMatchups.push({t1:fillInTeam,t2:others[1],div,isRR:false,isFillInGame:true});
+        teamAppearances[fillInTeam]++;teamAppearances[others[1]]++;
+      }
+
+      const remaining=avTeams.filter(t=>(teamAppearances[t]||0)===0);
+      for(let i=0;i+1<remaining.length&&allMatchups.length<gpw;i+=2){
+        allMatchups.push({t1:remaining[i],t2:remaining[i+1],div,isRR:false,isFillInGame:false});
+        teamAppearances[remaining[i]]++;teamAppearances[remaining[i+1]]++;
+      }
+    }
+
+    const teamCount={};
+    allMatchups.forEach(m=>{teamCount[m.t1]=(teamCount[m.t1]||0)+1;teamCount[m.t2]=(teamCount[m.t2]||0)+1;});
+    const maxCount=Math.max(...Object.values(teamCount),0);
+    const theFillInTeam=maxCount>1?Object.keys(teamCount).find(t=>teamCount[t]===maxCount):null;
+    allMatchups.forEach(m=>{if(theFillInTeam&&m.isFillInGame)m.fillInTeam=[theFillInTeam];});
+
+    debugLog.push(`<b>[${div} matchups]</b> ${allMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)+(m.isRR?' (RR)':' (fill-in)')).join(' | ')}`);
+    globalMatchups.push(...allMatchups);
+  });
+
+  // Step 2: Sort ALL matchups globally
+  // Fix 4: Two-pass scheduling
+  // Primary sort: fewest shared available slots (most constrained first)
+  // Secondary sort: youngest division first (U10 < U12 < U14)
+  const divOrder={U10:0,U12:1,U14:2};
+  globalMatchups.sort((a,b)=>{
+    const aSlots=bothAvail(w,a.t1,a.t2).length;
+    const bSlots=bothAvail(w,b.t1,b.t2).length;
+    if(aSlots!==bSlots) return aSlots-bSlots;
+    return divOrder[a.div]-divOrder[b.div];
+  });
+
+  // Step 3: Schedule globally, passing pending matchups for coach clash lookahead
+  for(let i=0;i<globalMatchups.length;i++){
+    const m=globalMatchups[i];
+    const pending=globalMatchups.slice(i+1); // matchups not yet scheduled
+    const ok=scheduleGame(m.t1,m.t2,m.div,m.isFillInGame,pending);
+    if(ok&&m.fillInTeam){
+      const last=scheduled[scheduled.length-1];
+      last.fillInTeam=m.fillInTeam;
+    }
+  }
+
+  // Rule 10: check club clustering (soft rule)
+  const allClubs=[...new Set([...TEAMS.U10,...TEAMS.U12,...TEAMS.U14].map(getClub))];
+  allClubs.forEach(club=>{
+    if(club==='GSA')return;
+    // Only check clubs with multiple teams across divisions
+    if(!multiTeamClubs.has(club))return;
+    const clubScheduled=scheduled.filter(g=>getClub(g.t1)===club||getClub(g.t2)===club);
+    if(clubScheduled.length<2)return;
+
+    // Check 1: same club games at same time slot — HARD RULE VIOLATION (except GSA)
+    const slotGroups={};
+    clubScheduled.forEach(g=>{
+      if(!slotGroups[g.slot])slotGroups[g.slot]=[];
+      slotGroups[g.slot].push(g);
+    });
+    Object.entries(slotGroups).forEach(([slot,games])=>{
+      if(games.length>1){
+        issues.push({
+          type:'coach_clash',
+          msg:club+' has '+games.length+' games at '+SLOT_LABELS[slot]+' simultaneously — coach cannot coach both. This violates the hard rule. Please adjust availability or edit the draw.',
+          div:'COACH'
+        });
+      }
+    });
+
+    // Check 2: gap between club games (coach has to wait)
+    const slots=clubScheduled.map(g=>VISIBLE_SLOTS.indexOf(g.slot)).sort((a,b)=>a-b);
+    for(let i=0;i+1<slots.length;i++){
+      if(slots[i+1]-slots[i]>1){
+        warnings.push({type:'club_gap',msg:'ℹ️ '+club+' teams have a gap between games — coach may need to wait',div:'INFO'});
+        break;
+      }
+    }
+  });
+
+  // Fix 1: back-to-back means no empty slots between first and last game
+  // A slot with only 1 game on 1 court is fine — doesn't need to fill both courts
+  const allSlotsUsed=[...new Set(scheduled.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
+  let hasGap=false;
+  if(allSlotsUsed.length>1){
+    const firstSlotIdx=VISIBLE_SLOTS.indexOf(allSlotsUsed[0]);
+    const lastSlotIdx=VISIBLE_SLOTS.indexOf(allSlotsUsed[allSlotsUsed.length-1]);
+    for(let i=firstSlotIdx;i<lastSlotIdx;i++){
+      const slot=VISIBLE_SLOTS[i];
+      if(!allSlotsUsed.includes(slot)){
+        hasGap=true;
+        warnings.push({type:'schedule_gap',msg:'⚠️ Gap in schedule at '+SLOT_LABELS[slot]+' — no games scheduled at this slot between other games. Requires your approval.',div:'ALL'});
+      }
+    }
+  }
+
+  scheduled.sort((a,b)=>VISIBLE_SLOTS.indexOf(a.slot)-VISIBLE_SLOTS.indexOf(b.slot));
+  return{scheduled,issues,warnings,rrWork,debugLog,hasGap};
+}
+
+function generateDraw(){
+  const w=currentWeek;
+  if(w>=FINALS_SEMI){generateFinalsDraw(w);return;}
+
+  const rrSnapshot=JSON.parse(JSON.stringify(db.rrRemaining));
+
+  const noGapAttempts=[];
+  const gapAttempts=[];
+
+  for(let seed=0;seed<8;seed++){
+    const att=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,false);
+    if(!att.hasGap&&att.issues.length===0){
+      const dup=noGapAttempts.some(a=>JSON.stringify(a.scheduled.map(g=>g.t1+g.t2+g.slot+g.court))===JSON.stringify(att.scheduled.map(g=>g.t1+g.t2+g.slot+g.court)));
+      if(!dup)noGapAttempts.push(att);
+    }
+    const attG=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true);
+    if(attG.issues.length===0&&attG.hasGap){
+      const dup=gapAttempts.some(a=>JSON.stringify(a.scheduled.map(g=>g.t1+g.t2+g.slot+g.court))===JSON.stringify(attG.scheduled.map(g=>g.t1+g.t2+g.slot+g.court)));
+      if(!dup)gapAttempts.push(attG);
+    }
+  }
+
+  const allValid=[...noGapAttempts,...gapAttempts];
+
+  function showDebug(attempts){
+    if(!attempts||!attempts.length)return;
+    const dbg=attempts[0].debugLog||[];
+    const box='<div class="card" style="margin-top:1rem"><div class="section-title">Debug log</div><div style="font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap">'+dbg.join('<br>')+'</div></div>';
+    document.getElementById('drawOutput').innerHTML+=box;
+  }
+
+  if(allValid.length===0){
+    const conflictAttempts=[];
+    for(let seed=0;seed<3;seed++){
+      conflictAttempts.push(tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true));
+    }
+    renderConflictOptions(w,conflictAttempts,rrSnapshot,true);
+    showDebug(conflictAttempts);
+    return;
+  }
+
+  if(allValid.length===1){
+    const chosen=allValid[0];
+    db.rrRemaining=chosen.rrWork;
+    db.draws[w]=chosen.scheduled;
+    saveDB(db);
+    renderDrawOutput(chosen.scheduled,chosen.warnings,w);
+    showDebug([chosen]);
+    renderSeasonGrid();
+    return;
+  }
+
+  renderConflictOptions(w,allValid,rrSnapshot,false);
+  showDebug(allValid);
+}
+
+function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
+  const el=document.getElementById('drawOutput');
+  const weekDate=fmtDate(getWeekDate(w));
+
+  let html='<div class="card">';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+  if(hasConflicts){
+    html+='<span style="font-size:13px;font-weight:500;color:#A32D2D">Conflicts detected — Week '+w+' &nbsp;</span>';
+  } else {
+    html+='<span style="font-size:13px;font-weight:500;color:#085041">'+attempts.length+' valid options — Week '+w+' &nbsp;</span>';
+  }
+  html+='<span style="font-size:12px;color:#888780">'+weekDate+'</span></div>';
+  html+='<p style="font-size:13px;color:#888780;margin-bottom:1rem">'+(hasConflicts?'All options have issues. Pick the best one and edit manually after.':'Multiple valid draws found. Pick the one you prefer.')+'</p>';
+
+  attempts.forEach((att,i)=>{
+    const optNum=i+1;
+    const hasIssues=att.issues.length>0;
+    const hasGap=att.hasGap;
+    const borderColor=hasIssues?'#F0959580':hasGap?'#EF9F27':'#9FE1CB';
+    const bgColor=hasIssues?'#fff':hasGap?'#FFFBF0':'#f9fef9';
+    html+='<div style="border:1px solid '+borderColor+';border-radius:10px;padding:12px 14px;margin-bottom:12px;background:'+bgColor+'">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">';
+    let statusLabel='';
+    if(hasIssues)statusLabel='<span style="font-size:11px;color:#A32D2D;font-weight:400;margin-left:4px">'+att.issues.length+' conflict'+(att.issues.length>1?'s':'')+'</span>';
+    else if(hasGap)statusLabel='<span style="font-size:11px;color:#7A5C00;font-weight:400;margin-left:4px">⚠️ Has gap — needs approval</span>';
+    else statusLabel='<span style="font-size:11px;color:#085041;font-weight:400;margin-left:4px">✓ No conflicts</span>';
+    html+='<div style="font-weight:500;font-size:14px">Option '+optNum+statusLabel+'</div>';
+    html+='<button class="btn primary" style="font-size:13px;padding:5px 14px" onclick="selectOption('+w+','+i+')">Use this draw</button>';
+    html+='</div>';
+
+    if(att.scheduled.length){
+      const usedSlots=[...new Set(att.scheduled.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
+      html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
+      html+='<thead><tr>';
+      html+='<th style="padding:5px 8px;text-align:left;color:#888780;border-bottom:0.5px solid #e0ddd5;min-width:110px">Time</th>';
+      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #e0ddd5;color:#085041">Court 1</th>';
+      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #e0ddd5;color:#0C447C">Court 2</th>';
+      html+='</tr></thead><tbody>';
+      usedSlots.forEach(slot=>{
+        const c1=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 1');
+        const c2=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 2');
+        html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
+        html+='<td style="padding:5px 8px;color:#888780;font-size:11px;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
+        [c1,c2].forEach(g=>{
+          if(g){
+            const t1l=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-size:10px">(Fill-in)</span>':'');
+            const t2l=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-size:10px">(Fill-in)</span>':'');
+            html+='<td style="padding:5px 8px"><span style="font-weight:500">'+t1l+' vs '+t2l+'</span>';
+            html+=' <span class="div-badge '+DIV_COLORS[g.div]+'" style="font-size:10px">'+g.div+'</span>';
+            html+='</td>';
+          } else {
+            html+='<td style="padding:5px 8px;color:#c0bdb5">—</td>';
+          }
+        });
+        html+='</tr>';
+      });
+      html+='</tbody></table>';
+
+      // Logic explanation per option
+      html+='<div style="margin-top:8px;border-top:0.5px solid #e0ddd5;padding-top:8px">';
+      html+='<div style="font-size:11px;font-weight:500;color:#888780;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Why this option</div>';
+      ['U10','U12','U14'].forEach(div=>{
+        const divGames=att.scheduled.filter(g=>g.div===div);
+        if(!divGames.length)return;
+        const teamCount={};
+        divGames.forEach(g=>{teamCount[g.t1]=(teamCount[g.t1]||0)+1;teamCount[g.t2]=(teamCount[g.t2]||0)+1;});
+        const fillInTeam=Object.keys(teamCount).find(t=>teamCount[t]>1);
+        const rrGames=divGames.filter(g=>!g.isFillInGame);
+        const fillInGames=divGames.filter(g=>g.isFillInGame);
+        const slots=divGames.map(g=>SLOT_LABELS[g.slot]||g.slot);
+        let logic='<b>'+div+':</b> ';
+        if(rrGames.length)logic+=rrGames.map(g=>shortName(g.t1)+' vs '+shortName(g.t2)).join(', ')+' (RR). ';
+        if(fillInTeam)logic+=shortName(fillInTeam)+' plays fill-in. ';
+        if(fillInGames.length)logic+='Fill-in game: '+fillInGames.map(g=>shortName(g.t1)+' vs '+shortName(g.t2)).join(', ')+'. ';
+        logic+='Slots used: '+[...new Set(divGames.map(g=>SLOT_LABELS[g.slot]||g.slot))].join(', ')+'.';
+        html+='<div style="font-size:12px;color:#444;line-height:1.7;margin-bottom:4px">'+logic+'</div>';
+      });
+      if(att.hasGap){
+        html+='<div style="font-size:12px;color:#7A5C00;margin-top:4px">⚠️ This option has a gap in the schedule — not all games are back-to-back. Requires your approval.</div>';
+      }
+      if(att.warnings&&att.warnings.filter(w=>w.type==='club_gap').length){
+        att.warnings.filter(w=>w.type==='club_gap').forEach(warn=>{
+          html+='<div style="font-size:12px;color:#888780;margin-top:2px">ℹ️ '+warn.msg+'</div>';
+        });
+      }
+      if(att.warnings&&att.warnings.filter(w=>w.type==='late_start').length){
+        att.warnings.filter(w=>w.type==='late_start').forEach(warn=>{
+          html+='<div style="font-size:12px;color:#888780;margin-top:2px">⚠️ '+warn.msg+'</div>';
+        });
+      }
+      html+='</div>';
+    }
+
+    if(hasIssues){
+      html+='<div style="margin-top:6px">';
+      att.issues.forEach(iss=>{
+        html+='<div style="font-size:12px;color:#A32D2D;padding:4px 0;border-top:0.5px solid #F7C1C1;display:flex;gap:6px;align-items:flex-start">';
+        html+='<span style="font-weight:500;min-width:32px">'+iss.div+'</span><span>'+iss.msg+'</span></div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  html+='</div>';
+
+  el.innerHTML=html;
+  el._attempts=attempts;
+  el._rrSnapshot=rrSnapshot;
+}
+
+function selectOption(w,idx){
+  const el=document.getElementById('drawOutput');
+  const attempts=el._attempts;
+  const rrSnapshot=el._rrSnapshot;
+  const chosen=attempts[idx];
+  db.rrRemaining=chosen.rrWork;
+  db.draws[w]=chosen.scheduled;
+  saveDB(db);
+  renderDrawOutput(chosen.scheduled,chosen.warnings||[],w);
+  renderSeasonGrid();
+}
+
+function generateFinalsDraw(w){
+  const output=[];
+  const flags=[];
+  const usedSlots={};
+  const teamBusyAt={};
+  function isFree(s,c){return!usedSlots[s+'|'+c];}
+  function occupy(s,c,t1,t2){
+    usedSlots[s+'|'+c]=true;
+    if(!teamBusyAt[t1])teamBusyAt[t1]=new Set();
+    if(!teamBusyAt[t2])teamBusyAt[t2]=new Set();
+    teamBusyAt[t1].add(s);teamBusyAt[t2].add(s);
+  }
+
+  function scheduleGame(t1,t2,div,label){
+    const avail=bothAvail(w,t1,t2);
+    const slot=avail.find(s=>(!teamBusyAt[t1]||!teamBusyAt[t1].has(s))&&(!teamBusyAt[t2]||!teamBusyAt[t2].has(s))&&COURTS.some(c=>isFree(s,c)));
+    if(!slot){flags.push({msg:'No slot for '+label+' — team clash or no court.',div});return;}
+    const court=COURTS.find(c=>isFree(slot,c));
+    occupy(slot,court,t1,t2);
+    output.push({slot,court,t1,t2,div,label});
+  }
+
+  ['U10','U12'].forEach(div=>{
+    const ranked=rankTeams(div);
+    if(w===FINALS_GRAND&&ranked.length>=2){
+      scheduleGame(ranked[0],ranked[1],div,'Grand Final');
+    }
+    if(w===FINALS_SEMI){
+      const makeup=TEAMS[div].filter(t=>t!==ranked[0]&&t!==ranked[1]);
+      makeup.forEach(t=>{
+        const opp=TEAMS[div].find(x=>x!==t&&x!==ranked[0])||ranked[0];
+        scheduleGame(t,opp,div,'Makeup game');
+      });
+    }
+  });
+
+  const r14=rankTeams('U14');
+  if(w===FINALS_SEMI){
+    if(r14.length>=4){
+      scheduleGame(r14[0],r14[3],'U14','Semi Final 1 (1st vs 4th)');
+      scheduleGame(r14[1],r14[2],'U14','Semi Final 2 (2nd vs 3rd)');
+    }
+    if(r14.length>=5)scheduleGame(r14[4],r14[3],'U14','Makeup (5th place)');
+  }
+  if(w===FINALS_GRAND){
+    if(r14.length>=2)scheduleGame(r14[0],r14[1],'U14','Grand Final');
+    const losers=r14.slice(2);
+    losers.forEach((t,i)=>{
+      const opp=losers[i+1]||losers[0];
+      if(opp!==t)scheduleGame(t,opp,'U14','Makeup game');
+    });
+  }
+
+  output.sort((a,b)=>VISIBLE_SLOTS.indexOf(a.slot)-VISIBLE_SLOTS.indexOf(b.slot));
+  db.draws[w]=output;
+  saveDB(db);
+  renderDrawOutput(output,flags,w,true);
+  renderSeasonGrid();
+}
+
+function rankTeams(div){
+  const s=db.standings[div];
+  return Object.keys(s).sort((a,b)=>s[b].pts-s[a].pts||(s[b].w-s[b].l)-(s[a].w-s[a].l));
+}
+
+function renderDrawOutput(games,warnings,w,isFinals){
+  const el=document.getElementById('drawOutput');
+  if(!games.length){el.innerHTML='<div class="empty-state">No games generated.</div>';return;}
+
+  const usedSlots=[...new Set(games.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
+  const weekDate=fmtDate(getWeekDate(w));
+
+  let html='<div class="card">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
+  html+='<div class="section-title" style="margin:0">Draw — week '+w+(isFinals?' (finals)':'')+' &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:#888780;font-size:12px">'+weekDate+'</span></div>';
+  html+='<button class="btn" onclick="printDraw('+w+')" style="font-size:13px;padding:6px 14px">Print / Save PDF</button>';
+  html+='</div>';
+  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html+='<thead><tr>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:#888780;border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#f0f9f5;color:#085041">Court 1</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#EBF3FC;color:#0C447C">Court 2</th>';
+  html+='</tr></thead><tbody>';
+
+  usedSlots.forEach(slot=>{
+    const c1=games.find(g=>g.slot===slot&&g.court==='Court 1');
+    const c2=games.find(g=>g.slot===slot&&g.court==='Court 2');
+    html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
+    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:#888780;white-space:nowrap">'+SLOT_LABELS[slot]+'</td>';
+    [c1,c2].forEach((g,ci)=>{
+      const bg=ci===0?'#f9fef9':'#f7fbff';
+      if(g){
+        html+='<td style="padding:10px 12px;background:'+bg+'">';
+        const t1Label=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
+        const t2Label=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
+        html+='<div style="font-weight:500;font-size:13px">'+t1Label+' <span style="color:#888780;font-weight:400">vs</span> '+t2Label+'</div>';
+        html+='<div style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+        html+='<span class="div-badge '+DIV_COLORS[g.div]+'">'+g.div+'</span>';
+        if(g.label)html+='<span style="font-size:11px;color:#888780">'+g.label+'</span>';
+        html+='</div>';
+        html+='</td>';
+      } else {
+        html+='<td style="padding:10px 12px;background:'+bg+';color:#c0bdb5;font-size:12px">—</td>';
+      }
+    });
+    html+='</tr>';
+  });
+
+  html+='</tbody></table></div>';
+
+  if(warnings&&warnings.length){
+    html+='<div style="margin-top:1rem">';
+    warnings.forEach(warn=>{
+      const isGap=warn.type==='schedule_gap';
+      const color=isGap?'#A32D2D':'#7A5C00';
+      const bg=isGap?'#FCEBEB':'#FAEEDA';
+      html+='<div style="border-left:3px solid '+color+';padding:8px 12px;background:'+bg+';border-radius:0 8px 8px 0;margin-bottom:6px;font-size:12px;color:'+color+'">'+warn.msg+'</div>';
+    });
+    html+='</div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function printDraw(w){
+  const games=db.draws[w];
+  if(!games||!games.length)return;
+  const weekDate=fmtDate(getWeekDate(w));
+  const usedSlots=[...new Set(games.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
+  let rows='';
+  usedSlots.forEach(slot=>{
+    const c1=games.find(g=>g.slot===slot&&g.court==='Court 1');
+    const c2=games.find(g=>g.slot===slot&&g.court==='Court 2');
+    function cell(g){
+      if(!g)return '<td style="padding:10px 14px;border:1px solid #ddd;color:#aaa">—</td>';
+      const t1p=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' (Fill-in)':'');
+      const t2p=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' (Fill-in)':'');
+      return '<td style="padding:10px 14px;border:1px solid #ddd"><strong>'+t1p+' vs '+t2p+'</strong><br><span style="font-size:11px;color:#666">'+g.div+'</span></td>';
+    }
+    rows+='<tr><td style="padding:10px 14px;border:1px solid #ddd;font-weight:500;white-space:nowrap;color:#555">'+SLOT_LABELS[slot]+'</td>'+cell(c1)+cell(c2)+'</tr>';
+  });
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Draw Week '+w+'</title><style>body{font-family:system-ui,sans-serif;padding:2rem;color:#1a1a18}h2{margin-bottom:4px}p{color:#888;margin-bottom:1.5rem;font-size:14px}table{width:100%;border-collapse:collapse;font-size:14px}th{padding:10px 14px;background:#f5f5f3;border:1px solid #ddd;text-align:left}@media print{button{display:none}}</style></head><body><h2>PCYC Auburn — Junior Basketball Draw</h2><p>Week '+w+' &nbsp;|&nbsp; '+weekDate+'</p><table><thead><tr><th>Time</th><th>Court 1</th><th>Court 2</th></tr></thead><tbody>'+rows+'</tbody></table><br><button onclick="window.print()">Print</button></body></html>';
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
+function renderResultsPage(){
+  const w=currentWeekR;
+  const draw=db.draws[w];
+  const body=document.getElementById('resultsBody');
+  if(!draw||!draw.length){body.innerHTML='<div class="no-games-msg">No draw found for week '+w+'. Generate the draw first.</div>';return;}
+
+  let html='';
+  draw.forEach((g,i)=>{
+    const res=db.results[w]&&db.results[w][i]||{s1:'',s2:''};
+    html+='<div class="result-row">';
+    html+='<span class="div-badge '+DIV_COLORS[g.div]+'" style="margin-right:4px">'+g.div+'</span>';
+    html+='<span class="matchup-label">'+shortName(g.t1)+' vs '+shortName(g.t2)+'</span>';
+    html+='<input type="number" min="0" id="s1_'+i+'" value="'+res.s1+'" placeholder="—">';
+    html+='<span class="vs-sep">—</span>';
+    html+='<input type="number" min="0" id="s2_'+i+'" value="'+res.s2+'" placeholder="—">';
+    html+='</div>';
+  });
+  body.innerHTML=html;
+}
+
+function saveResults(){
+  const w=currentWeekR;
+  const draw=db.draws[w];
+  if(!draw)return;
+  if(!db.results[w])db.results[w]={};
+
+  draw.forEach((g,i)=>{
+    const s1=parseInt(document.getElementById('s1_'+i).value);
+    const s2=parseInt(document.getElementById('s2_'+i).value);
+    if(isNaN(s1)||isNaN(s2))return;
+
+    const prev=db.results[w][i];
+    if(prev&&prev.s1!==''&&prev.s2!==''){
+      undoResult(g,parseInt(prev.s1),parseInt(prev.s2));
+    }
+
+    db.results[w][i]={s1,s2};
+
+    const st=db.standings[g.div];
+    if(s1>s2){st[g.t1].w++;st[g.t2].l++;st[g.t1].pts+=2;}
+    else if(s2>s1){st[g.t2].w++;st[g.t1].l++;st[g.t2].pts+=2;}
+    else{st[g.t1].d++;st[g.t2].d++;st[g.t1].pts++;st[g.t2].pts++;}
+  });
+
+  saveDB(db);
+  alert('Results saved.');
+  renderStandings();
+}
+
+function undoResult(g,s1,s2){
+  const st=db.standings[g.div];
+  if(s1>s2){st[g.t1].w--;st[g.t2].l--;st[g.t1].pts-=2;}
+  else if(s2>s1){st[g.t2].w--;st[g.t1].l--;st[g.t2].pts-=2;}
+  else{st[g.t1].d--;st[g.t2].d--;st[g.t1].pts--;st[g.t2].pts--;}
+}
+
+function renderStandings(){
+  const wrap=document.getElementById('standingsWrap');
+  let html='';
+  ['U10','U12','U14'].forEach(div=>{
+    const badge=DIV_COLORS[div];
+    html+='<div class="card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="div-badge '+badge+'">'+div+'</span><span class="section-title" style="margin:0">Standings</span></div>';
+    html+='<table class="std-table"><thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>D</th><th>Pts</th></tr></thead><tbody>';
+    const ranked=Object.entries(db.standings[div]).sort((a,b)=>b[1].pts-a[1].pts);
+    ranked.forEach(([t,s],i)=>{
+      html+='<tr><td class="rank">'+(i+1)+'</td><td>'+shortName(t)+'</td><td>'+s.w+'</td><td>'+s.l+'</td><td>'+s.d+'</td><td><strong>'+s.pts+'</strong></td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+  wrap.innerHTML=html;
+}
+
+function renderSeasonGrid(){
+  const grid=document.getElementById('seasonGrid');
+  const metrics=document.getElementById('metricRow');
+  let played=0;
+  let html='';
+  for(let w=1;w<=TOTAL_WEEKS;w++){
+    const hasDraw=db.draws[w]&&db.draws[w].length>0;
+    const hasResults=db.results[w]&&Object.keys(db.results[w]).length>0;
+    let cls='week-chip';
+    if(w===FINALS_SEMI||w===FINALS_GRAND)cls+=' finals';
+    else if(hasResults)cls+=' done';
+    if(w===currentWeek)cls+=' current';
+    const d=getWeekDate(w);
+    const label=w===FINALS_SEMI?'SF':w===FINALS_GRAND?'GF':'W'+w;
+    html+='<div class="'+cls+'" onclick="showWeekDetail('+w+')" title="'+fmtDate(d)+'"><div style="font-weight:500">'+label+'</div><div style="font-size:10px;color:#888780">'+d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</div></div>';
+    if(hasResults)played+=Object.keys(db.results[w]).length;
+  }
+  grid.innerHTML=html;
+
+  const rrU10=(db.rrRemaining&&db.rrRemaining.U10)||[];
+  const rrU12=(db.rrRemaining&&db.rrRemaining.U12)||[];
+  const rrU14=(db.rrRemaining&&db.rrRemaining.U14)||[];
+
+  metrics.innerHTML=
+    '<div class="metric"><div class="mlabel">Games played</div><div class="mval">'+played+'</div></div>'+
+    '<div class="metric"><div class="mlabel">RR left U10</div><div class="mval">'+rrU10.length+'</div></div>'+
+    '<div class="metric"><div class="mlabel">RR left U12</div><div class="mval">'+rrU12.length+'</div></div>'+
+    '<div class="metric"><div class="mlabel">RR left U14</div><div class="mval">'+rrU14.length+'</div></div>';
+}
+
+function showWeekDetail(w){
+  const card=document.getElementById('weekDetailCard');
+  const title=document.getElementById('weekDetailTitle');
+  const body=document.getElementById('weekDetailBody');
+  card.style.display='block';
+  title.textContent='Week '+w+' — '+fmtDate(getWeekDate(w));
+  renderWeekDetailBody(w,body);
+}
+
+function renderWeekDetailBody(w,body){
+  const draw=db.draws[w];
+  if(!draw||!draw.length){
+    body.innerHTML='<div class="no-games-msg">No draw generated yet.</div>';
+    return;
+  }
+
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  const usedSlots=[...new Set(draw.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
+
+  let html='<div style="overflow-x:auto;margin-bottom:1rem"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html+='<thead><tr>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:#888780;border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#f0f9f5;color:#085041">Court 1</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#EBF3FC;color:#0C447C">Court 2</th>';
+  html+='</tr></thead><tbody>';
+  usedSlots.forEach(slot=>{
+    const c1=draw.find(g=>g.slot===slot&&g.court==='Court 1');
+    const c2=draw.find(g=>g.slot===slot&&g.court==='Court 2');
+    html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
+    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:#888780;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
+    [c1,c2].forEach((g,ci)=>{
+      const bg=ci===0?'#f9fef9':'#f7fbff';
+      if(g){
+        const idx=draw.indexOf(g);
+        html+='<td style="padding:10px 12px;background:'+bg+'">';
+        const t1d=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
+        const t2d=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
+        html+='<div style="font-weight:500;font-size:13px">'+t1d+' <span style="color:#888780;font-weight:400">vs</span> '+t2d+'</div>';
+        html+='<div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
+        html+='<span class="div-badge '+DIV_COLORS[g.div]+'">'+g.div+'</span>';
+        html+='</div>';
+        html+='<div style="margin-top:6px;display:flex;gap:6px">';
+        html+='<button class="edit-save" onclick="startEditGame('+w+','+idx+')">Edit</button>';
+        html+='<button class="edit-del" onclick="deleteGame('+w+','+idx+')">Delete</button>';
+        html+='</div>';
+        html+='</td>';
+      } else {
+        html+='<td style="padding:10px 12px;background:'+bg+';color:#c0bdb5;font-size:12px">—</td>';
+      }
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+
+  html+='<button class="btn" style="font-size:13px;padding:6px 14px" onclick="startAddGame('+w+')">+ Add game</button>';
+  body.innerHTML=html;
+}
+
+function startEditGame(w,idx){
+  const draw=db.draws[w];
+  const g=draw[idx];
+  const body=document.getElementById('weekDetailBody');
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+
+  function teamOpts(selected){
+    return allTeams.map(t=>'<option value="'+t+'"'+(t===selected?' selected':'')+'>'+shortName(t)+'</option>').join('');
+  }
+  function slotOpts(selected){
+    return VISIBLE_SLOTS.map(s=>'<option value="'+s+'"'+(s===selected?' selected':'')+'>'+SLOT_LABELS[s]+'</option>').join('');
+  }
+  function courtOpts(selected){
+    return COURTS.map(c=>'<option value="'+c+'"'+(c===selected?' selected':'')+'>'+c+'</option>').join('');
+  }
+
+  const form='<div class="card" style="margin-top:1rem"><div class="section-title">Edit game</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 1</div><select id="eg_t1" style="width:100%">'+teamOpts(g.t1)+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 2</div><select id="eg_t2" style="width:100%">'+teamOpts(g.t2)+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Time slot</div><select id="eg_slot" style="width:100%">'+slotOpts(g.slot)+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Court</div><select id="eg_court" style="width:100%">'+courtOpts(g.court)+'</select></div>'+
+    '</div>'+
+    '<div class="btn-row">'+
+    '<button class="btn primary" onclick="saveEditGame('+w+','+idx+')">Save</button>'+
+    '<button class="btn" onclick="renderWeekDetailBody('+w+',document.getElementById(\'weekDetailBody\'))">Cancel</button>'+
+    '</div></div>';
+
+  body.innerHTML+=form;
+}
+
+function saveEditGame(w,idx){
+  const t1=document.getElementById('eg_t1').value;
+  const t2=document.getElementById('eg_t2').value;
+  const slot=document.getElementById('eg_slot').value;
+  const court=document.getElementById('eg_court').value;
+  if(t1===t2){alert('Team 1 and Team 2 cannot be the same.');return;}
+  const div=t1.includes('U10')?'U10':t1.includes('U12')?'U12':'U14';
+  db.draws[w][idx]={...db.draws[w][idx],t1,t2,slot,court,div};
+  saveDB(db);
+  renderWeekDetailBody(w,document.getElementById('weekDetailBody'));
+}
+
+function deleteGame(w,idx){
+  if(!confirm('Delete this game from the draw?'))return;
+  db.draws[w].splice(idx,1);
+  saveDB(db);
+  renderWeekDetailBody(w,document.getElementById('weekDetailBody'));
+  renderSeasonGrid();
+}
+
+function startAddGame(w){
+  const body=document.getElementById('weekDetailBody');
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  function teamOpts(){return allTeams.map(t=>'<option value="'+t+'">'+shortName(t)+'</option>').join('');}
+  function slotOpts(){return VISIBLE_SLOTS.map(s=>'<option value="'+s+'">'+SLOT_LABELS[s]+'</option>').join('');}
+  function courtOpts(){return COURTS.map(c=>'<option value="'+c+'">'+c+'</option>').join('');}
+  const form='<div class="card" style="margin-top:1rem"><div class="section-title">Add game</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 1</div><select id="ag_t1" style="width:100%">'+teamOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 2</div><select id="ag_t2" style="width:100%">'+teamOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Time slot</div><select id="ag_slot" style="width:100%">'+slotOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Court</div><select id="ag_court" style="width:100%">'+courtOpts()+'</select></div>'+
+    '</div>'+
+    '<div class="btn-row">'+
+    '<button class="btn primary" onclick="saveAddGame('+w+')">Add</button>'+
+    '<button class="btn" onclick="renderWeekDetailBody('+w+',document.getElementById(\'weekDetailBody\'))">Cancel</button>'+
+    '</div></div>';
+  body.innerHTML+=form;
+}
+
+function saveAddGame(w){
+  const t1=document.getElementById('ag_t1').value;
+  const t2=document.getElementById('ag_t2').value;
+  const slot=document.getElementById('ag_slot').value;
+  const court=document.getElementById('ag_court').value;
+  if(t1===t2){alert('Team 1 and Team 2 cannot be the same.');return;}
+  const div=t1.includes('U10')?'U10':t1.includes('U12')?'U12':'U14';
+  if(!db.draws[w])db.draws[w]=[];
+  db.draws[w].push({t1,t2,slot,court,div,isFillIn:false});
+  saveDB(db);
+  renderWeekDetailBody(w,document.getElementById('weekDetailBody'));
+  renderSeasonGrid();
+}
+
+function scanAllData(){
+  const out=document.getElementById('recoveryOutput');
+  let html='<b>All pcyc keys found in browser:</b><br>';
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('pcyc'));
+  if(!keys.length){html+='No pcyc data found in this browser.';out.innerHTML=html;return;}
+  keys.forEach(key=>{
+    const data=JSON.parse(localStorage.getItem(key));
+    const availCount=Object.values(data.avail||{}).filter(v=>v===true).length;
+    const drawWeeks=Object.keys(data.draws||{}).length;
+    html+=`<div style="margin:6px 0;padding:8px;background:#f5f5f3;border-radius:6px">
+      <b>${key}</b> — ${availCount} ticks saved, ${drawWeeks} weeks with draws
+      <button class="btn" style="font-size:11px;padding:3px 10px;margin-left:8px" onclick="restoreFrom('${key}')">Restore this</button>
+    </div>`;
+  });
+  out.innerHTML=html;
+}
+
+function restoreFrom(key){
+  const old=JSON.parse(localStorage.getItem(key));
+  const db={
+    avail:old.avail||{},
+    draws:old.draws||{},
+    results:old.results||{},
+    standings:old.standings||{},
+    dhCount:old.dhCount||{},
+    rrRemaining:old.rrRemaining||generateFullRR()
+  };
+  ['U10','U12','U14'].forEach(div=>{
+    if(!db.standings[div])db.standings[div]={};
+    TEAMS[div].forEach(t=>{
+      if(!db.standings[div][t])db.standings[div][t]={w:0,l:0,d:0,pts:0};
+      if(db.dhCount[t]===undefined)db.dhCount[t]=0;
+    });
+  });
+  localStorage.setItem('pcyc_v8',JSON.stringify(db));
+  window.db=initDB();
+  document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Restored from '+key+'. Reload the page to see your data.</span>';
+}
+
+function exportData(){
+  const data=localStorage.getItem('pcyc_v8');
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='pcyc_auburn_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+
+function importData(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        localStorage.setItem('pcyc_v8',JSON.stringify(data));
+        window.db=initDB();
+        document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Data imported successfully. Reload the page to see your data.</span>';
+      }catch(err){
+        document.getElementById('recoveryOutput').innerHTML='<span style="color:#A32D2D">Error: invalid file.</span>';
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function showPage(p,btn){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(p==='standings')renderStandings();
+  if(p==='season')renderSeasonGrid();
+  if(p==='results')renderResultsPage();
+}
+
+populateWeekSelects();
+renderAvailTable();
+</script>
+</body>
+</html>

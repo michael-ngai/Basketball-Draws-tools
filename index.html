@@ -4,6 +4,55 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PCYC Auburn Basketball Draw Tool</title>
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDc9Z_k90VvELgFhCoMOK2MCjWPvs6qDZM",
+    authDomain: "basketball-draws-tools.firebaseapp.com",
+    projectId: "basketball-draws-tools",
+    storageBucket: "basketball-draws-tools.firebasestorage.app",
+    messagingSenderId: "847147567024",
+    appId: "1:847147567024:web:fad3d4f2113b20f781f875"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const firestore = getFirestore(app);
+  const DB_DOC = doc(firestore, 'pcyc-auburn', 'main');
+
+  window._fbSave = async function(data) {
+    try {
+      await setDoc(DB_DOC, data);
+    } catch(e) {
+      console.error('Firebase save error:', e);
+      // Fallback to localStorage
+      localStorage.setItem('pcyc_v8', JSON.stringify(data));
+    }
+  };
+
+  window._fbLoad = async function() {
+    try {
+      const snap = await getDoc(DB_DOC);
+      if(snap.exists()) return snap.data();
+      return null;
+    } catch(e) {
+      console.error('Firebase load error:', e);
+      return null;
+    }
+  };
+
+  window._fbListen = function(callback) {
+    return onSnapshot(DB_DOC, (snap) => {
+      if(snap.exists()) callback(snap.data());
+    });
+  };
+
+  window._firebaseReady = true;
+  // Signal app to init
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a18;padding:1rem}
@@ -75,7 +124,10 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 </head>
 <body>
 <div class="app">
-<h1>PCYC Auburn — Junior Basketball Draw Tool</h1>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+<h1 style="font-size:18px;font-weight:500;margin:0">PCYC Auburn — Junior Basketball Draw Tool</h1>
+<div id="syncStatus"><span style="color:#888780;font-size:12px">⟳ Connecting...</span></div>
+</div>
 <div class="nav">
   <button class="active" onclick="showPage('draw',this)">Weekly draw</button>
   <button onclick="showPage('results',this)">Enter results</button>
@@ -274,42 +326,75 @@ const DIV_COLORS = {U10:'u10-badge',U12:'u12-badge',U14:'u14-badge'};
 function getWeekDate(w){return WEEK_DATES[w-1]||WEEK_DATES[WEEK_DATES.length-1];}
 function fmtDate(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});}
 
-function initDB(){
-  if(!localStorage.getItem('pcyc_v8')){
-    // Migrate from v7 if it exists
-    const oldData=localStorage.getItem('pcyc_v7');
-    if(oldData){
-      const old=JSON.parse(oldData);
-      const db={
-        avail:old.avail||{},
-        draws:old.draws||{},
-        results:old.results||{},
-        standings:old.standings||{},
-        dhCount:old.dhCount||{},
-        rrRemaining:old.rrRemaining||generateFullRR()
-      };
-      ['U10','U12','U14'].forEach(div=>{
-        if(!db.standings[div])db.standings[div]={};
-        TEAMS[div].forEach(t=>{
-          if(!db.standings[div][t])db.standings[div][t]={w:0,l:0,d:0,pts:0};
-          if(!db.dhCount[t])db.dhCount[t]=0;
-        });
-      });
-      localStorage.setItem('pcyc_v8',JSON.stringify(db));
-    } else {
-      const db={avail:{},draws:{},results:{},standings:{},dhCount:{}};
-      ['U10','U12','U14'].forEach(div=>{
-        db.standings[div]={};
-        TEAMS[div].forEach(t=>{db.standings[div][t]={w:0,l:0,d:0,pts:0};db.dhCount[t]=0;});
-      });
-      db.rrRemaining=generateFullRR();
-      localStorage.setItem('pcyc_v8',JSON.stringify(db));
-    }
-  }
-  return JSON.parse(localStorage.getItem('pcyc_v8'));
+function freshDB(){
+  const db={avail:{},draws:{},results:{},standings:{},dhCount:{}};
+  ['U10','U12','U14'].forEach(div=>{
+    db.standings[div]={};
+    TEAMS[div].forEach(t=>{db.standings[div][t]={w:0,l:0,d:0,pts:0};db.dhCount[t]=0;});
+  });
+  db.rrRemaining=generateFullRR();
+  return db;
 }
 
-function saveDB(db){localStorage.setItem('pcyc_v8',JSON.stringify(db));}
+function initDB(){
+  // Start with localStorage fallback while Firebase loads
+  const local=localStorage.getItem('pcyc_v8');
+  return local ? JSON.parse(local) : freshDB();
+}
+
+async function loadFromFirebase(){
+  if(!window._fbLoad) return;
+  showSyncStatus('loading');
+  try {
+    const data=await window._fbLoad();
+    if(data){
+      // Ensure all required fields exist
+      ['U10','U12','U14'].forEach(div=>{
+        if(!data.standings) data.standings={};
+        if(!data.standings[div]) data.standings[div]={};
+        TEAMS[div].forEach(t=>{
+          if(!data.standings[div][t]) data.standings[div][t]={w:0,l:0,d:0,pts:0};
+          if(!data.dhCount) data.dhCount={};
+          if(!data.dhCount[t]) data.dhCount[t]=0;
+        });
+        if(!data.avail) data.avail={};
+        if(!data.draws) data.draws={};
+        if(!data.results) data.results={};
+        if(!data.rrRemaining) data.rrRemaining=generateFullRR();
+      });
+      window.db=data;
+      localStorage.setItem('pcyc_v8', JSON.stringify(data));
+      renderAvailTable();
+      renderSeasonGrid();
+      showSyncStatus('synced');
+    } else {
+      // No data in Firebase yet — push local data up
+      await window._fbSave(window.db);
+      showSyncStatus('synced');
+    }
+  } catch(e) {
+    showSyncStatus('offline');
+  }
+}
+
+function showSyncStatus(status){
+  const el=document.getElementById('syncStatus');
+  if(!el) return;
+  if(status==='loading') el.innerHTML='<span style="color:#888780;font-size:12px">⟳ Syncing...</span>';
+  else if(status==='synced') el.innerHTML='<span style="color:#085041;font-size:12px">✓ Synced</span>';
+  else if(status==='saving') el.innerHTML='<span style="color:#888780;font-size:12px">⟳ Saving...</span>';
+  else if(status==='offline') el.innerHTML='<span style="color:#BA7517;font-size:12px">⚠️ Offline — saved locally</span>';
+}
+
+function saveDB(data){
+  // Save to localStorage immediately (fast)
+  localStorage.setItem('pcyc_v8', JSON.stringify(data));
+  // Save to Firebase (async, syncs to all devices)
+  if(window._fbSave){
+    showSyncStatus('saving');
+    window._fbSave(data).then(()=>showSyncStatus('synced')).catch(()=>showSyncStatus('offline'));
+  }
+}
 
 function generateFullRR(){
   const rr={U10:[],U12:[],U14:[]};
@@ -1388,9 +1473,9 @@ function restoreFrom(key){
       if(db.dhCount[t]===undefined)db.dhCount[t]=0;
     });
   });
-  localStorage.setItem('pcyc_v8',JSON.stringify(db));
-  window.db=initDB();
-  document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Restored from '+key+'. Reload the page to see your data.</span>';
+  window.db=db;
+  saveDB(db); // saves to both localStorage AND Firebase
+  document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Restored and synced to cloud. Reload the page to see your data.</span>';
 }
 
 function exportData(){
@@ -1433,6 +1518,33 @@ function showPage(p,btn){
   if(p==='season')renderSeasonGrid();
   if(p==='results')renderResultsPage();
 }
+
+// Load from Firebase when ready
+document.addEventListener('firebase-ready', ()=>{
+  loadFromFirebase();
+  // Listen for real-time changes from other devices
+  if(window._fbListen){
+    window._fbListen((data)=>{
+      // Only update if data is newer (avoid overwriting own saves)
+      const localStr=JSON.stringify(window.db);
+      const remoteStr=JSON.stringify(data);
+      if(localStr!==remoteStr){
+        ['U10','U12','U14'].forEach(div=>{
+          if(!data.standings) data.standings={};
+          if(!data.standings[div]) data.standings[div]={};
+          TEAMS[div].forEach(t=>{
+            if(!data.standings[div][t]) data.standings[div][t]={w:0,l:0,d:0,pts:0};
+          });
+        });
+        window.db=data;
+        localStorage.setItem('pcyc_v8', JSON.stringify(data));
+        renderAvailTable();
+        renderSeasonGrid();
+        showSyncStatus('synced');
+      }
+    });
+  }
+});
 
 populateWeekSelects();
 renderAvailTable();

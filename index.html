@@ -597,20 +597,17 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     );
     if(clashInScheduled) return true;
 
-    // Check pending matchups: only block slot S if a same-club pending game
-    // has NO other slot available except S — meaning placing here would force a clash
+    // Check pending matchups: block slot S if placing here would leave a same-club
+    // pending game with NO valid slot remaining
     for(const m of pendingMatchups){
       const mc1=getClub(m.t1), mc2=getClub(m.t2);
       const sameClubAsT1=checkC1&&multiTeamClubs.has(mc1)&&(mc1===c1||mc2===c1);
       const sameClubAsT2=checkC2&&multiTeamClubs.has(mc2)&&(mc1===c2||mc2===c2);
       if(!sameClubAsT1&&!sameClubAsT2) continue;
-      // Only block if this slot is the ONLY option for the pending same-club game
       const pendingAvail=bothAvail(w,m.t1,m.t2);
+      // Block if pending game only has this slot left
       const otherSlots=pendingAvail.filter(s=>s!==slot);
-      if(pendingAvail.includes(slot) && otherSlots.length===0){
-        // Pending game has no alternative — placing here would guarantee a clash
-        return true;
-      }
+      if(pendingAvail.includes(slot)&&otherSlots.length===0) return true;
     }
     return false;
   }
@@ -796,14 +793,31 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
   });
 
   // Step 2: Sort ALL matchups globally
-  // Fix 4: Two-pass scheduling
-  // Primary sort: fewest shared available slots (most constrained first)
-  // Secondary sort: youngest division first (U10 < U12 < U14)
+  // Primary: fewest shared available slots (most constrained first)
+  // Secondary: games sharing a club with another game get higher priority (schedule them spread out)
+  // Tertiary: youngest division first
   const divOrder={U10:0,U12:1,U14:2};
+
+  // Count how many other pending games share a club with each matchup
+  function clubConstraintScore(m, allMatchups){
+    const c1=getClub(m.t1), c2=getClub(m.t2);
+    let score=0;
+    allMatchups.forEach(other=>{
+      if(other===m) return;
+      if(c1!=='GSA'&&multiTeamClubs.has(c1)&&(getClub(other.t1)===c1||getClub(other.t2)===c1)) score++;
+      if(c2!=='GSA'&&multiTeamClubs.has(c2)&&(getClub(other.t1)===c2||getClub(other.t2)===c2)) score++;
+    });
+    return score;
+  }
+
   globalMatchups.sort((a,b)=>{
     const aSlots=bothAvail(w,a.t1,a.t2).length;
     const bSlots=bothAvail(w,b.t1,b.t2).length;
     if(aSlots!==bSlots) return aSlots-bSlots;
+    // More club dependencies = schedule earlier so we can spread them out
+    const aClub=clubConstraintScore(a,globalMatchups);
+    const bClub=clubConstraintScore(b,globalMatchups);
+    if(aClub!==bClub) return bClub-aClub;
     return divOrder[a.div]-divOrder[b.div];
   });
 

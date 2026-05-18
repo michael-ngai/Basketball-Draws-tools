@@ -386,8 +386,15 @@ function freshDB(){
 
 function initDB(){
   // Start with localStorage fallback while Firebase loads
-  const local=localStorage.getItem('pcyc_v8');
-  return local ? JSON.parse(local) : freshDB();
+  try {
+    const local=localStorage.getItem('pcyc_v8');
+    if(local && local !== 'undefined' && local !== 'null'){
+      return JSON.parse(local);
+    }
+  } catch(e) {
+    console.warn('localStorage parse error:', e);
+  }
+  return freshDB();
 }
 
 async function loadFromFirebase(){

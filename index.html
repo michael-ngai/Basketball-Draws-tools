@@ -355,6 +355,21 @@ const DIV_COLORS = {U10:'u10-badge',U12:'u12-badge',U14:'u14-badge'};
 function getWeekDate(w){return WEEK_DATES[w-1]||WEEK_DATES[WEEK_DATES.length-1];}
 function fmtDate(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});}
 
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+
+function generateFullRR(){
+  const rr={U10:[],U12:[],U14:[]};
+  ['U10','U12','U14'].forEach(div=>{
+    const teams=TEAMS[div];
+    for(let i=0;i<teams.length;i++)
+      for(let j=i+1;j<teams.length;j++){
+        rr[div].push([teams[i],teams[j]]);
+        rr[div].push([teams[i],teams[j]]);
+      }
+    shuffle(rr[div]);
+  });
+  return rr;
+}
 function freshDB(){
   const db={avail:{},draws:{},results:{},standings:{},dhCount:{}};
   ['U10','U12','U14'].forEach(div=>{
@@ -431,21 +446,6 @@ function saveDB(data){
   }
 }
 
-function generateFullRR(){
-  const rr={U10:[],U12:[],U14:[]};
-  ['U10','U12','U14'].forEach(div=>{
-    const teams=TEAMS[div];
-    for(let i=0;i<teams.length;i++)
-      for(let j=i+1;j<teams.length;j++){
-        rr[div].push([teams[i],teams[j]]);
-        rr[div].push([teams[i],teams[j]]);
-      }
-    shuffle(rr[div]);
-  });
-  return rr;
-}
-
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
 
 let db=initDB();
 let currentWeek=1;

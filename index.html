@@ -50,12 +50,37 @@
   };
 
   window._firebaseReady = true;
-  // Signal app to init — wait for DOM to be ready first
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ()=>document.dispatchEvent(new Event('firebase-ready')));
-  } else {
-    setTimeout(()=>document.dispatchEvent(new Event('firebase-ready')), 100);
+  // Poll until main app is ready, then trigger Firebase load
+  function waitForApp(){
+    if(typeof loadFromFirebase === 'function'){
+      loadFromFirebase();
+      if(window._fbListen){
+        window._fbListen((data)=>{
+          if(!data) return;
+          const localStr=JSON.stringify(window.db);
+          const remoteStr=JSON.stringify(data);
+          if(localStr!==remoteStr){
+            ['U10','U12','U14'].forEach(div=>{
+              if(!data.standings) data.standings={};
+              if(!data.standings[div]) data.standings[div]={};
+              if(!Array.isArray(window.TEAMS && window.TEAMS[div])) return;
+              TEAMS[div].forEach(t=>{
+                if(!data.standings[div][t]) data.standings[div][t]={w:0,l:0,d:0,pts:0};
+              });
+            });
+            window.db=data;
+            localStorage.setItem('pcyc_v8', JSON.stringify(data));
+            if(typeof renderAvailTable==='function') renderAvailTable();
+            if(typeof renderSeasonGrid==='function') renderSeasonGrid();
+            if(typeof showSyncStatus==='function') showSyncStatus('synced');
+          }
+        });
+      }
+    } else {
+      setTimeout(waitForApp, 100);
+    }
   }
+  waitForApp();
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1536,33 +1561,6 @@ function showPage(p,btn){
   if(p==='season')renderSeasonGrid();
   if(p==='results')renderResultsPage();
 }
-
-// Load from Firebase when ready
-document.addEventListener('firebase-ready', ()=>{
-  loadFromFirebase();
-  // Listen for real-time changes from other devices
-  if(window._fbListen){
-    window._fbListen((data)=>{
-      // Only update if data is newer (avoid overwriting own saves)
-      const localStr=JSON.stringify(window.db);
-      const remoteStr=JSON.stringify(data);
-      if(localStr!==remoteStr){
-        ['U10','U12','U14'].forEach(div=>{
-          if(!data.standings) data.standings={};
-          if(!data.standings[div]) data.standings[div]={};
-          TEAMS[div].forEach(t=>{
-            if(!data.standings[div][t]) data.standings[div][t]={w:0,l:0,d:0,pts:0};
-          });
-        });
-        window.db=data;
-        localStorage.setItem('pcyc_v8', JSON.stringify(data));
-        renderAvailTable();
-        renderSeasonGrid();
-        showSyncStatus('synced');
-      }
-    });
-  }
-});
 
 populateWeekSelects();
 renderAvailTable();

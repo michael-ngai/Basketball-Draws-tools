@@ -307,6 +307,10 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 </div>
 
 <script>
+window.onerror = function(msg, src, line, col, err){
+  document.body.innerHTML = '<div style="padding:2rem;font-family:monospace;color:red"><b>JS Error:</b><br>' + msg + '<br>Line: ' + line + '<br>' + (err ? err.stack : '') + '</div>';
+  return false;
+};
 const SKIP_DATES = ['17/7/2026','24/7/2026'];
 function buildWeekDates(){
   const dates=[];

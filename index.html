@@ -618,36 +618,21 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
   });
 
   // Coach clash check: hard rule — same club cannot play at same slot (except GSA)
+  // Simple and strict: only check already-scheduled games, no lookahead complexity
   function wouldCoachClash(slot, t1, t2, pendingMatchups){
     const c1=getClub(t1), c2=getClub(t2);
     if(c1==='GSA' && c2==='GSA') return false;
-    // Only check clubs that actually have multiple teams
     const checkC1=multiTeamClubs.has(c1)&&c1!=='GSA';
     const checkC2=multiTeamClubs.has(c2)&&c2!=='GSA';
     if(!checkC1&&!checkC2) return false;
 
-    // Check already scheduled games at this slot — hard block
-    const clashInScheduled=scheduled.some(g=>
+    // Hard block: already scheduled same-club game at this slot
+    return scheduled.some(g=>
       g.slot===slot && (
         (checkC1 && (getClub(g.t1)===c1||getClub(g.t2)===c1)) ||
         (checkC2 && (getClub(g.t1)===c2||getClub(g.t2)===c2))
       )
     );
-    if(clashInScheduled) return true;
-
-    // Check pending matchups: block slot S if placing here would leave a same-club
-    // pending game with NO valid slot remaining
-    for(const m of pendingMatchups){
-      const mc1=getClub(m.t1), mc2=getClub(m.t2);
-      const sameClubAsT1=checkC1&&multiTeamClubs.has(mc1)&&(mc1===c1||mc2===c1);
-      const sameClubAsT2=checkC2&&multiTeamClubs.has(mc2)&&(mc1===c2||mc2===c2);
-      if(!sameClubAsT1&&!sameClubAsT2) continue;
-      const pendingAvail=bothAvail(w,m.t1,m.t2);
-      // Block if pending game only has this slot left
-      const otherSlots=pendingAvail.filter(s=>s!==slot);
-      if(pendingAvail.includes(slot)&&otherSlots.length===0) return true;
-    }
-    return false;
   }
 
   function pickSlot(avail, t1, t2, pendingMatchups=[]){
@@ -856,8 +841,11 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     const aClub=clubConstraintScore(a,globalMatchups);
     const bClub=clubConstraintScore(b,globalMatchups);
     if(aClub!==bClub) return bClub-aClub;
+    // Within same constraint level — youngest division first
     return divOrder[a.div]-divOrder[b.div];
   });
+
+  debugLog.push('<b>[Sort order]</b> '+globalMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)+' ('+m.div+', '+bothAvail(w,m.t1,m.t2).length+' slots)').join(' → '));
 
   // Step 3: Schedule globally, passing pending matchups for coach clash lookahead
   for(let i=0;i<globalMatchups.length;i++){

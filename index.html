@@ -50,8 +50,12 @@
   };
 
   window._firebaseReady = true;
-  // Signal app to init
-  document.dispatchEvent(new Event('firebase-ready'));
+  // Signal app to init — wait for DOM to be ready first
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>document.dispatchEvent(new Event('firebase-ready')));
+  } else {
+    setTimeout(()=>document.dispatchEvent(new Event('firebase-ready')), 100);
+  }
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1497,9 +1501,9 @@ function importData(){
     reader.onload=ev=>{
       try{
         const data=JSON.parse(ev.target.result);
-        localStorage.setItem('pcyc_v8',JSON.stringify(data));
-        window.db=initDB();
-        document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Data imported successfully. Reload the page to see your data.</span>';
+        window.db=data;
+        saveDB(data);
+        document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Data imported and synced to cloud. Reload the page to see your data.</span>';
       }catch(err){
         document.getElementById('recoveryOutput').innerHTML='<span style="color:#A32D2D">Error: invalid file.</span>';
       }

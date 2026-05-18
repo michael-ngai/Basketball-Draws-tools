@@ -378,23 +378,28 @@ async function loadFromFirebase(){
     const data=await window._fbLoad();
     if(data){
       // Ensure all required fields exist
+      if(!data.standings) data.standings={};
+      if(!data.avail) data.avail={};
+      if(!data.draws) data.draws={};
+      if(!data.results) data.results={};
+      if(!data.dhCount) data.dhCount={};
+      if(!data.rrRemaining) data.rrRemaining=generateFullRR();
       ['U10','U12','U14'].forEach(div=>{
-        if(!data.standings) data.standings={};
         if(!data.standings[div]) data.standings[div]={};
         TEAMS[div].forEach(t=>{
           if(!data.standings[div][t]) data.standings[div][t]={w:0,l:0,d:0,pts:0};
-          if(!data.dhCount) data.dhCount={};
           if(!data.dhCount[t]) data.dhCount[t]=0;
         });
-        if(!data.avail) data.avail={};
-        if(!data.draws) data.draws={};
-        if(!data.results) data.results={};
-        if(!data.rrRemaining) data.rrRemaining=generateFullRR();
       });
       window.db=data;
+      db=data;
       localStorage.setItem('pcyc_v8', JSON.stringify(data));
+      // Re-render everything
+      populateWeekSelects();
       renderAvailTable();
       renderSeasonGrid();
+      renderStandings();
+      renderResultsPage();
       showSyncStatus('synced');
     } else {
       // No data in Firebase yet — push local data up
@@ -402,6 +407,7 @@ async function loadFromFirebase(){
       showSyncStatus('synced');
     }
   } catch(e) {
+    console.error('Firebase load error:', e);
     showSyncStatus('offline');
   }
 }

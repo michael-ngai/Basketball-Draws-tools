@@ -257,10 +257,10 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 </div>
 
 <div id="page-draw" class="page active">
-  <div class="week-bar">
-    <label>Week</label>
-    <select id="weekSelect" onchange="weekChanged()"></select>
-    <span class="week-label" id="weekDateLabel"></span>
+  <div style="margin-bottom:1.5rem">
+    <div class="section-title">Select week</div>
+    <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px"></div>
+    <div style="font-size:14px;font-weight:500;color:#1a1a18" id="weekDateLabel"></div>
   </div>
   <div class="card">
     <div class="section-title">Team availability — tick available slots</div>
@@ -277,10 +277,10 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 </div>
 
 <div id="page-results" class="page">
-  <div class="week-bar">
-    <label>Week</label>
-    <select id="weekSelectR" onchange="weekChangedR()"></select>
-    <span class="week-label" id="weekDateLabelR"></span>
+  <div style="margin-bottom:1.5rem">
+    <div class="section-title">Select week</div>
+    <div id="weekGridR" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px"></div>
+    <div style="font-size:14px;font-weight:500;color:#1a1a18" id="weekDateLabelR"></div>
   </div>
   <div class="card" id="resultsCard">
     <div class="section-title">Enter scores</div>
@@ -463,35 +463,85 @@ function saveDB(data){
 
 
 let db=initDB();
-let currentWeek=1;
-let currentWeekR=1;
+function detectCurrentWeek(){
+  const today=new Date();
+  for(let w=1;w<=TOTAL_WEEKS;w++){
+    const d=getWeekDate(w);
+    const diff=(d-today)/(1000*60*60*24);
+    if(diff>=-6&&diff<=0) return w; // today is within this week's Friday
+    if(diff>0) return w; // upcoming week
+  }
+  return TOTAL_WEEKS;
+}
+let currentWeek=detectCurrentWeek();
+let currentWeekR=currentWeek;
 
 function populateWeekSelects(){
-  ['weekSelect','weekSelectR'].forEach(id=>{
-    const sel=document.getElementById(id);
-    sel.innerHTML='';
-    for(let w=1;w<=TOTAL_WEEKS;w++){
-      const opt=document.createElement('option');
-      opt.value=w;
-      const suffix=w===FINALS_SEMI?' — Semi Finals':w===FINALS_GRAND?' — Finals':'';
-      opt.textContent='Week '+w+suffix;
-      if(w===currentWeek&&id==='weekSelect')opt.selected=true;
-      if(w===currentWeekR&&id==='weekSelectR')opt.selected=true;
-      sel.appendChild(opt);
-    }
+  renderWeekGrid('weekGrid', currentWeek, function(w){
+    currentWeek=w;
+    updateWeekLabels();
+    renderAvailTable();
+    document.getElementById('drawOutput').innerHTML='';
+    renderWeekGrid('weekGrid',currentWeek,arguments.callee);
+  });
+  renderWeekGrid('weekGridR', currentWeekR, function(w){
+    currentWeekR=w;
+    updateWeekLabels();
+    renderResultsPage();
+    renderWeekGrid('weekGridR',currentWeekR,arguments.callee);
   });
   updateWeekLabels();
 }
 
-function updateWeekLabels(){
-  const d=getWeekDate(currentWeek);
-  document.getElementById('weekDateLabel').textContent='Friday '+fmtDate(d);
-  const d2=getWeekDate(currentWeekR);
-  document.getElementById('weekDateLabelR').textContent='Friday '+fmtDate(d2);
+function renderWeekGrid(gridId, activeWeek, onSelect){
+  const grid=document.getElementById(gridId);
+  if(!grid)return;
+  let html='';
+  for(let w=1;w<=TOTAL_WEEKS;w++){
+    const d=getWeekDate(w);
+    const label=w===FINALS_SEMI?'SF':w===FINALS_GRAND?'GF':'W'+w;
+    const hasDraw=db.draws[w]&&db.draws[w].length>0;
+    const hasResults=db.results[w]&&Object.keys(db.results[w]).length>0;
+    let bg='#fff', border='0.5px solid #e0ddd5', color='#1a1a18', fontWeight='400';
+    if(w===activeWeek){border='2px solid #1D9E75';fontWeight='500';}
+    else if(hasResults){bg='#E1F5EE';border='0.5px solid #5DCAA5';color='#085041';}
+    else if(hasDraw){bg='#f0f9f5';border='0.5px solid #9FE1CB';}
+    else if(w===FINALS_SEMI||w===FINALS_GRAND){bg='#FAEEDA';border='0.5px solid #EF9F27';color='#412402';}
+    html+=`<div onclick="weekGridClick('${gridId}',${w})" style="padding:5px 3px;border-radius:8px;border:${border};text-align:center;font-size:11px;cursor:pointer;background:${bg};color:${color};font-weight:${fontWeight}">
+      <div style="font-weight:500">${label}</div>
+      <div style="font-size:10px;opacity:0.7">${d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+    </div>`;
+  }
+  grid.innerHTML=html;
+  grid._onSelect=onSelect;
 }
 
-function weekChanged(){currentWeek=parseInt(document.getElementById('weekSelect').value);updateWeekLabels();renderAvailTable();document.getElementById('drawOutput').innerHTML='';}
-function weekChangedR(){currentWeekR=parseInt(document.getElementById('weekSelectR').value);updateWeekLabels();renderResultsPage();}
+function weekGridClick(gridId, w){
+  const grid=document.getElementById(gridId);
+  if(gridId==='weekGrid'){
+    currentWeek=w;
+    updateWeekLabels();
+    renderAvailTable();
+    document.getElementById('drawOutput').innerHTML='';
+    renderWeekGrid('weekGrid',currentWeek,grid._onSelect);
+  } else {
+    currentWeekR=w;
+    updateWeekLabels();
+    renderResultsPage();
+    renderWeekGrid('weekGridR',currentWeekR,grid._onSelect);
+  }
+}
+
+function updateWeekLabels(){
+  const d=getWeekDate(currentWeek);
+  const el=document.getElementById('weekDateLabel');
+  if(el)el.textContent='Friday '+fmtDate(d)+' — Week '+currentWeek;
+  const d2=getWeekDate(currentWeekR);
+  const el2=document.getElementById('weekDateLabelR');
+  if(el2)el2.textContent='Friday '+fmtDate(d2)+' — Week '+currentWeekR;
+}
+
+// weekChanged and weekChangedR replaced by weekGridClick
 
 function getAvailKey(w,team,slot){return w+'_'+team+'_'+slot;}
 
@@ -1367,6 +1417,9 @@ function renderSeasonGrid(){
     '<div class="metric"><div class="mlabel">RR left U10</div><div class="mval">'+rrU10.length+'</div></div>'+
     '<div class="metric"><div class="mlabel">RR left U12</div><div class="mval">'+rrU12.length+'</div></div>'+
     '<div class="metric"><div class="mlabel">RR left U14</div><div class="mval">'+rrU14.length+'</div></div>';
+  // Refresh draw week grids too
+  renderWeekGrid('weekGrid',currentWeek,null);
+  renderWeekGrid('weekGridR',currentWeekR,null);
 }
 
 function showWeekDetail(w){

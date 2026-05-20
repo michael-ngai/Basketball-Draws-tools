@@ -313,6 +313,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
     <div id="recoveryOutput" style="margin-top:12px;font-size:12px;font-family:monospace"></div>
   </div>
 </div>
+</div>
 
 <script>
 const SKIP_DATES = ['17/7/2026','24/7/2026'];
@@ -1577,6 +1578,7 @@ function saveAddGame(w){
 }
 
 function scanAllData(){
+  try{
   const out=document.getElementById('recoveryOutput');
   let html='<b>All pcyc keys found in browser:</b><br>';
   const keys=Object.keys(localStorage).filter(k=>k.startsWith('pcyc'));
@@ -1591,8 +1593,9 @@ function scanAllData(){
     </div>`;
   });
   out.innerHTML=html;
-}
 
+  }catch(e){document.getElementById('recoveryOutput').innerHTML='<span style="color:red">Error: '+e.message+'</span>';}
+}
 function restoreFrom(key){
   const old=JSON.parse(localStorage.getItem(key));
   const db={
@@ -1647,13 +1650,15 @@ function importData(){
 }
 
 function showPage(p,btn){
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nav button').forEach(el=>el.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  if(btn)btn.classList.add('active');
-  if(p==='standings')renderStandings();
-  if(p==='season')renderSeasonGrid();
-  if(p==='results')renderResultsPage();
+  try{
+    document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(el=>el.classList.remove('active'));
+    document.getElementById('page-'+p).classList.add('active');
+    if(btn)btn.classList.add('active');
+    if(p==='standings')try{renderStandings();}catch(e){console.error('standings',e);}
+    if(p==='season')try{renderSeasonGrid();}catch(e){console.error('season',e);}
+    if(p==='results')try{renderResultsPage();}catch(e){console.error('results',e);}
+  }catch(e){console.error('showPage error',e);}
 }
 
 function updateClock(){

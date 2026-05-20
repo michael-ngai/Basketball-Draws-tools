@@ -869,8 +869,12 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       const pool=notYet.length>0?notYet:avTeams.slice();
       const fillInTeam=pool[seed%Math.max(pool.length,1)];
 
-      // others = all available teams except fill-in team
-      const others=avTeams.filter(t=>t!==fillInTeam);
+      // others = teams NOT already in RR games (excluding fill-in team)
+      // This prevents fill-in game pairing fill-in team with a team already playing RR
+      const alreadyInRR=new Set(allMatchups.flatMap(m=>[m.t1,m.t2]));
+      const othersNotInRR=avTeams.filter(t=>t!==fillInTeam&&!alreadyInRR.has(t));
+      // Fall back to all others if not enough teams outside RR
+      const others=othersNotInRR.length>0?othersNotInRR:avTeams.filter(t=>t!==fillInTeam);
       if(seed%3===1) others.reverse();
       else if(seed%3===2&&others.length>1){const x=others.shift();others.push(x);}
 

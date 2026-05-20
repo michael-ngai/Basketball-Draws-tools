@@ -466,12 +466,22 @@ function saveDB(data){
 let db=initDB();
 function detectCurrentWeek(){
   const today=new Date();
+  today.setHours(0,0,0,0);
   for(let w=1;w<=TOTAL_WEEKS;w++){
-    const d=getWeekDate(w);
-    const diff=(d-today)/(1000*60*60*24);
-    if(diff>=-6&&diff<=0) return w; // today is within this week's Friday
-    if(diff>0) return w; // upcoming week
+    const friday=new Date(getWeekDate(w));
+    friday.setHours(0,0,0,0);
+    // Find Monday of this week (Friday - 4 days)
+    const monday=new Date(friday);
+    monday.setDate(friday.getDate()-4);
+    // Find Sunday of this week (Friday + 2 days)
+    const sunday=new Date(friday);
+    sunday.setDate(friday.getDate()+2);
+    if(today>=monday&&today<=sunday) return w;
   }
+  // If past all weeks, return last week
+  // If before first week, return week 1
+  const firstFriday=new Date(getWeekDate(1));
+  if(today<firstFriday) return 1;
   return TOTAL_WEEKS;
 }
 let currentWeek=detectCurrentWeek();

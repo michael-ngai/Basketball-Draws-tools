@@ -313,7 +313,6 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
     <div id="recoveryOutput" style="margin-top:12px;font-size:12px;font-family:monospace"></div>
   </div>
 </div>
-</div>
 
 <script>
 const SKIP_DATES = ['17/7/2026','24/7/2026'];
@@ -1427,9 +1426,11 @@ function renderSeasonGrid(){
     '<div class="metric"><div class="mlabel">RR left U10</div><div class="mval">'+rrU10.length+'</div></div>'+
     '<div class="metric"><div class="mlabel">RR left U12</div><div class="mval">'+rrU12.length+'</div></div>'+
     '<div class="metric"><div class="mlabel">RR left U14</div><div class="mval">'+rrU14.length+'</div></div>';
-  // Refresh draw week grids too
-  renderWeekGrid('weekGrid',currentWeek,null);
-  renderWeekGrid('weekGridR',currentWeekR,null);
+  // Refresh draw week grids too (preserve existing click handlers)
+  const wg=document.getElementById('weekGrid');
+  if(wg)renderWeekGrid('weekGrid',currentWeek,wg._onSelect||null);
+  const wgr=document.getElementById('weekGridR');
+  if(wgr)renderWeekGrid('weekGridR',currentWeekR,wgr._onSelect||null);
 }
 
 function showWeekDetail(w){

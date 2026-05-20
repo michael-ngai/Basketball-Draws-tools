@@ -307,8 +307,10 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
     <p style="font-size:13px;color:#888780;margin-bottom:10px">If your ticks or draws are missing, click below to scan all saved data in this browser and recover it.</p>
     <div class="btn-row">
       <button class="btn" onclick="scanAllData()">Scan browser data</button>
+      <button class="btn primary" onclick="forceLoadFirebase()">Load from cloud</button>
       <button class="btn" onclick="exportData()">Export current data</button>
       <button class="btn" onclick="importData()">Import data</button>
+      <button class="btn" style="color:#A32D2D;border-color:#F09595" onclick="clearBadData()">Clear bad data</button>
     </div>
     <div id="recoveryOutput" style="margin-top:12px;font-size:12px;font-family:monospace"></div>
   </div>
@@ -1576,6 +1578,57 @@ function saveAddGame(w){
   saveDB(db);
   renderWeekDetailBody(w,document.getElementById('weekDetailBody'));
   renderSeasonGrid();
+}
+
+function forceLoadFirebase(){
+  const out=document.getElementById('recoveryOutput');
+  if(!window._fbLoad){out.innerHTML='<span style="color:#A32D2D">Firebase not connected.</span>';return;}
+  out.innerHTML='<span style="color:#888780">⟳ Loading from cloud...</span>';
+  window._fbLoad().then(data=>{
+    if(!data){out.innerHTML='<span style="color:#A32D2D">No data found in cloud.</span>';return;}
+    const availCount=Object.values(data.avail||{}).filter(v=>v===true).length;
+    const drawWeeks=Object.keys(data.draws||{}).length;
+    out.innerHTML='<span style="color:#085041">✓ Found cloud data: '+availCount+' ticks, '+drawWeeks+' weeks with draws.</span><br>'+
+      '<button class="btn primary" style="margin-top:8px" onclick="applyFirebaseData()">Apply this data</button>';
+    window._pendingFirebaseData=data;
+  }).catch(e=>{out.innerHTML='<span style="color:#A32D2D">Error: '+e.message+'</span>';});
+}
+
+function applyFirebaseData(){
+  const data=window._pendingFirebaseData;
+  if(!data)return;
+  if(!data.standings)data.standings={};
+  if(!data.avail)data.avail={};
+  if(!data.draws)data.draws={};
+  if(!data.results)data.results={};
+  if(!data.dhCount)data.dhCount={};
+  if(!data.rrRemaining)data.rrRemaining=generateFullRR();
+  ['U10','U12','U14'].forEach(div=>{
+    if(!data.standings[div])data.standings[div]={};
+    TEAMS[div].forEach(t=>{
+      if(!data.standings[div][t])data.standings[div][t]={w:0,l:0,d:0,pts:0};
+    });
+  });
+  window.db=data;
+  db=data;
+  localStorage.setItem('pcyc_v8',JSON.stringify(data));
+  renderAvailTable();
+  renderSeasonGrid();
+  renderStandings();
+  renderResultsPage();
+  document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Data applied. Your ticks and draws are restored.</span>';
+}
+
+function clearBadData(){
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith('pcyc'));
+  keys.forEach(k=>{
+    try{
+      const raw=localStorage.getItem(k);
+      if(!raw||raw==='undefined'||raw==='null')localStorage.removeItem(k);
+      else JSON.parse(raw);
+    }catch(e){localStorage.removeItem(k);}
+  });
+  document.getElementById('recoveryOutput').innerHTML='<span style="color:#085041">✓ Bad data cleared.</span>';
 }
 
 function scanAllData(){

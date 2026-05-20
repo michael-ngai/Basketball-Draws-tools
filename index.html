@@ -25,12 +25,12 @@
   const firestore = getFirestore(app);
   const DB_DOC = doc(firestore, 'pcyc-auburn', 'main');
 
+  // Firestore doesn't support nested arrays — serialize as JSON string
   window._fbSave = async function(data) {
     try {
-      await setDoc(DB_DOC, data);
+      await setDoc(DB_DOC, { payload: JSON.stringify(data) });
     } catch(e) {
       console.error('Firebase save error:', e);
-      // Fallback to localStorage
       localStorage.setItem('pcyc_v8', JSON.stringify(data));
     }
   };
@@ -38,7 +38,11 @@
   window._fbLoad = async function() {
     try {
       const snap = await getDoc(DB_DOC);
-      if(snap.exists()) return snap.data();
+      if(snap.exists()){
+        const raw=snap.data();
+        if(raw.payload) return JSON.parse(raw.payload);
+        return raw; // legacy format fallback
+      }
       return null;
     } catch(e) {
       console.error('Firebase load error:', e);
@@ -60,6 +64,8 @@
       if(window._fbListen){
         window._fbListen((data)=>{
           if(!data) return;
+          // Handle new payload format
+          if(data.payload) { try{ data=JSON.parse(data.payload); }catch(e){ return; } }
           const localStr=JSON.stringify(window.db);
           const remoteStr=JSON.stringify(data);
           if(localStr!==remoteStr){

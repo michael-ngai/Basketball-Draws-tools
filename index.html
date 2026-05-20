@@ -270,7 +270,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
     <div class="btn-row">
       <button class="btn primary" onclick="generateDraw()">Generate draw</button>
       <button class="btn" onclick="clearAvail()">Clear all</button>
-      <button class="btn" onclick="allAvail()">All available</button>
+      <button class="btn" onclick="copyFromLastWeek()">Copy from last week</button>
     </div>
   </div>
   <div id="drawOutput" class="draw-output"></div>
@@ -530,7 +530,7 @@ function renderAvailTable(){
   VS.forEach(slot=>{
     html+='<td class="slot-cell"><input type="checkbox" class="cb col-all" title="Select all for this slot" data-slot="'+slot+'" style="accent-color:#1D9E75"></td>';
   });
-  html+='<td></td></tr>';
+  html+='<td class="slot-cell"><button onclick="allAvail()" class="btn" style="font-size:11px;padding:3px 10px;color:#1D9E75;border-color:#1D9E75" title="Tick all slots for all teams">All available</button></td></tr>';
   html+='</tbody>';
   t.innerHTML=html;
 
@@ -576,6 +576,27 @@ function allAvail(){
   const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
   allTeams.forEach(team=>VISIBLE_SLOTS.forEach(slot=>{db.avail[getAvailKey(currentWeek,team,slot)]=true;}));
   saveDB(db);renderAvailTable();
+}
+
+function copyFromLastWeek(){
+  const prev=currentWeek-1;
+  if(prev<1){alert('No previous week to copy from.');return;}
+  const allTeams=[...TEAMS.U10,...TEAMS.U12,...TEAMS.U14];
+  let copied=0;
+  allTeams.forEach(team=>{
+    VISIBLE_SLOTS.forEach(slot=>{
+      const prevKey=getAvailKey(prev,team,slot);
+      const currKey=getAvailKey(currentWeek,team,slot);
+      const val=db.avail[prevKey]===undefined?false:db.avail[prevKey];
+      db.avail[currKey]=val;
+      if(val)copied++;
+    });
+  });
+  saveDB(db);
+  renderAvailTable();
+  if(copied===0){
+    alert('Week '+(prev)+' had no ticks — nothing copied. Tick availability for week '+prev+' first.');
+  }
 }
 
 function getAvailSlots(week,team){

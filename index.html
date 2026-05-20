@@ -262,8 +262,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 <div id="page-draw" class="page active">
   <div style="margin-bottom:1.5rem">
     <div class="section-title">Select week</div>
-    <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px"></div>
-    <div style="font-size:14px;font-weight:500;color:#1a1a18" id="weekDateLabel"></div>
+    <div id="weekGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
   </div>
   <div class="card">
     <div class="section-title">Team availability — tick available slots</div>
@@ -282,8 +281,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 <div id="page-results" class="page">
   <div style="margin-bottom:1.5rem">
     <div class="section-title">Select week</div>
-    <div id="weekGridR" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px"></div>
-    <div style="font-size:14px;font-weight:500;color:#1a1a18" id="weekDateLabelR"></div>
+    <div id="weekGridR" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>
   </div>
   <div class="card" id="resultsCard">
     <div class="section-title">Enter scores</div>
@@ -510,9 +508,9 @@ function renderWeekGrid(gridId, activeWeek, onSelect){
     else if(hasResults){bg='#E1F5EE';border='0.5px solid #5DCAA5';color='#085041';}
     else if(hasDraw){bg='#f0f9f5';border='0.5px solid #9FE1CB';}
     else if(w===FINALS_SEMI||w===FINALS_GRAND){bg='#FAEEDA';border='0.5px solid #EF9F27';color='#412402';}
-    html+=`<div onclick="weekGridClick('${gridId}',${w})" style="padding:5px 3px;border-radius:8px;border:${border};text-align:center;font-size:11px;cursor:pointer;background:${bg};color:${color};font-weight:${fontWeight}">
-      <div style="font-weight:500">${label}</div>
-      <div style="font-size:10px;opacity:0.7">${d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+    html+=`<div onclick="weekGridClick('${gridId}',${w})" style="padding:5px 4px;border-radius:8px;border:${border};text-align:center;font-size:11px;cursor:pointer;background:${bg};color:${color};font-weight:${fontWeight}">
+      <div style="font-weight:600">${label}</div>
+      <div style="font-size:10px;opacity:0.8">${d.getDate()} ${d.toLocaleDateString('en-AU',{month:'short'})} ${d.getFullYear()}</div>
     </div>`;
   }
   grid.innerHTML=html;
@@ -536,12 +534,7 @@ function weekGridClick(gridId, w){
 }
 
 function updateWeekLabels(){
-  const d=getWeekDate(currentWeek);
-  const el=document.getElementById('weekDateLabel');
-  if(el)el.textContent='Friday '+fmtDate(d)+' — Week '+currentWeek;
-  const d2=getWeekDate(currentWeekR);
-  const el2=document.getElementById('weekDateLabelR');
-  if(el2)el2.textContent='Friday '+fmtDate(d2)+' — Week '+currentWeekR;
+  // Labels removed — week info shown in grid cells
 }
 
 // weekChanged and weekChangedR replaced by weekGridClick

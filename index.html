@@ -857,10 +857,27 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       ...rrWork[div].filter(p=>wasPlayedLastWeek(p[0],p[1]))
     ];
 
-    for(const pair of rrSorted){
+    // We need (gpw-1) RR games for odd divisions (1 team will be fill-in)
+    // Pick RR games that EXCLUDE the most flexible team (most slots available)
+    // so that team can be the fill-in team with max scheduling flexibility
+    const rrNeeded=avTeams.length%2===0?gpw:gpw-1; // odd div: leave 1 team out for fill-in
+    const flexibilityScore=t=>getAvailSlots(w,t).length;
+    const mostFlexible=avTeams.slice().sort((a,b)=>flexibilityScore(b)-flexibilityScore(a));
+    // Preferred fill-in = most flexible team (varies by seed for multiple options)
+    const preferredFillIn=mostFlexible[seed%Math.max(mostFlexible.length,1)];
+
+    // First pass: try to pick RR games that don't involve preferredFillIn
+    const rrWithoutFillIn=rrSorted.filter(p=>p[0]!==preferredFillIn&&p[1]!==preferredFillIn);
+    const rrWithFillIn=rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn);
+    const rrOrdered=[...rrWithoutFillIn,...rrWithFillIn];
+
+    for(const pair of rrOrdered){
       const t1=pair[0],t2=pair[1];
       const wouldExceed=(rrAppearances[t1]||0)>=1||(rrAppearances[t2]||0)>=1;
-      if(allMatchups.length<gpw&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
+      if(allMatchups.length<rrNeeded&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
+        allMatchups.push({t1,t2,div,isRR:true,isFillInGame:false});
+        rrAppearances[t1]++;rrAppearances[t2]++;
+      } else if(allMatchups.length>=rrNeeded&&allMatchups.length<gpw&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
         allMatchups.push({t1,t2,div,isRR:true,isFillInGame:false});
         rrAppearances[t1]++;rrAppearances[t2]++;
       } else {

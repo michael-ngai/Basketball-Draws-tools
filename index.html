@@ -883,6 +883,7 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       return aLast-bLast; // if equal count, pick team whose fill-in was longest ago
     });
     const preferredFillIn=avTeamsByRotation[seed%Math.max(avTeamsByRotation.length,1)];
+    if(seed===0) console.log('['+div+'] RR queue has Free Flow games:', rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn).length, 'of', rrSorted.length, 'total. Queue:', rrSorted.slice(0,4).map(p=>shortName(p[0])+' vs '+shortName(p[1])).join(' | '));
     console.log('['+div+'] fillIn rotation sort:', avTeamsByRotation.map(t=>shortName(t)+'(c:'+(fillInCounts2[t]?fillInCounts2[t].count||0:0)+',lw:'+(fillInCounts2[t]?fillInCounts2[t].lastWeek||0:0)+')').join(' > '), '→ picked:', shortName(preferredFillIn), 'seed:',seed);
 
     // Step 2: For odd divisions, fill-in team plays TWICE (1 RR + 1 fill-in)

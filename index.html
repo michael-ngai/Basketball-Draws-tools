@@ -1136,33 +1136,42 @@ function generateDraw(){
     return;
   }
 
-  // Build ideal 3 options with different flag profiles:
-  // Option 1: perfect (no flags at all)
-  // Option 2: exactly 1 soft warning
-  // Option 3: exactly 1 soft warning but DIFFERENT club/type than option 2
-  const perfect=unique.filter(a=>!a.hasGap&&a.warnings.length===0);
-  const singleFlag=unique.filter(a=>a.warnings.length===1||(a.hasGap&&a.warnings.filter(x=>x.type!=='schedule_gap').length===0));
+  // Score each attempt: 0=perfect, 1=one soft warning, 2+=multiple warnings
+  function warningScore(att){
+    let score=0;
+    if(att.hasGap) score+=1;
+    score+=att.warnings.filter(x=>x.type==='club_gap').length;
+    return score;
+  }
+
+  // Sort all unique draws: fewest warnings first
+  unique.sort((a,b)=>warningScore(a)-warningScore(b));
 
   const finalOptions=[];
+  const usedFlags=new Set();
 
-  // Option 1: best perfect draw
-  if(perfect.length>0) finalOptions.push(perfect[0]);
-
-  // Options 2 & 3: different flag profiles
-  const usedFlags=new Set(finalOptions.map(a=>flagKey(a)));
-  for(const att of [...singleFlag,...unique]){
+  // Pick up to 3 options, each with a DIFFERENT flag profile
+  // Priority: lowest warning score first, then different flag key
+  for(const att of unique){
     if(finalOptions.length>=3)break;
     const fk=flagKey(att);
+    // Only add if this flag profile hasn't been used yet
     if(!usedFlags.has(fk)){
       finalOptions.push(att);
       usedFlags.add(fk);
     }
   }
 
-  // Fill to 3 if needed
-  for(const att of unique){
-    if(finalOptions.length>=3)break;
-    if(!finalOptions.includes(att))finalOptions.push(att);
+  // If we couldn't find 3 distinct flag profiles, fill with best remaining
+  // but only if they have the same or fewer warnings than last option
+  if(finalOptions.length<3){
+    const lastScore=finalOptions.length>0?warningScore(finalOptions[finalOptions.length-1]):99;
+    for(const att of unique){
+      if(finalOptions.length>=3)break;
+      if(!finalOptions.includes(att)&&warningScore(att)<=lastScore+1){
+        finalOptions.push(att);
+      }
+    }
   }
 
   if(finalOptions.length===1){

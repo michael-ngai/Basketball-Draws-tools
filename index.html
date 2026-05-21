@@ -1933,10 +1933,9 @@ function preloadManualDraws(){
 
   // Only load if week hasn't been set yet
   function setWeek(w, games){
-    // Always set weeks 1-4 from manual data if they have fewer than 7 games
-    if(!db.draws[w] || db.draws[w].length<7){
-      db.draws[w]=games;
-    }
+    // Always force-overwrite weeks 1-4 with correct manual data
+    // This ensures Firebase old data doesn't corrupt fill-in team labels
+    db.draws[w]=games;
   }
 
   // Week 1 — 1 May 2026

@@ -1142,28 +1142,32 @@ function generateDraw(){
     return score;
   }
 
-  // Filter: only keep draws where fill-in teams match rotation order (seed:0 picks)
-  // Run seed:0 to get the "correct" fill-in teams for this week
+  // Filter: only keep draws where:
+  // 1. Fill-in teams match rotation order
+  // 2. Each division has the correct number of games
   const correctFillIns={};
+  const expectedGames={'U10':gamesPerWeek('U10'),'U12':gamesPerWeek('U12'),'U14':gamesPerWeek('U14')};
   const refAttempt=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),0,true);
   ['U10','U12','U14'].forEach(div=>{
     const divGames=refAttempt.scheduled.filter(g=>g.div===div);
     const fiGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
     if(fiGame) correctFillIns[div]=fiGame.fillInTeam[0];
   });
-  console.log('Correct fill-ins for this week:', Object.entries(correctFillIns).map(([d,t])=>d+':'+shortName(t)).join(' | '));
 
-  // Only keep options that use the correct fill-in teams
+  // Only keep options that use correct fill-in teams AND have full game counts
   const filtered=unique.filter(att=>{
     return ['U10','U12','U14'].every(div=>{
-      if(!correctFillIns[div]) return true; // no fill-in for this div
       const divGames=att.scheduled.filter(g=>g.div===div);
+      // Must have correct number of games
+      if(divGames.length<expectedGames[div]) return false;
+      // Must use correct fill-in team
+      if(!correctFillIns[div]) return true;
       const fiGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
       if(!fiGame) return true;
       return fiGame.fillInTeam[0]===correctFillIns[div];
     });
   });
-  const finalPool=filtered.length>0?filtered:unique; // fallback if filter removes everything
+  const finalPool=filtered.length>0?filtered:unique;
 
   // Sort all unique draws: fewest warnings first
   finalPool.sort((a,b)=>warningScore(a)-warningScore(b));

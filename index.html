@@ -1080,12 +1080,17 @@ function generateDraw(){
 
   // Generate many attempts with different seeds
   const allAttempts=[];
+  const conflictAttempts=[];
   for(let seed=0;seed<16;seed++){
     const att=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,false);
     if(att.issues.length===0) allAttempts.push(att);
+    else conflictAttempts.push(att);
     const attG=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true);
     if(attG.issues.length===0) allAttempts.push(attG);
+    else conflictAttempts.push(attG);
   }
+  // Use clean attempts first, fall back to conflict attempts only if nothing else
+  const attemptPool=allAttempts.length>0?allAttempts:conflictAttempts;
 
   function drawKey(att){
     return att.scheduled.map(g=>g.t1+'|'+g.t2+'|'+g.slot+'|'+g.court).sort().join(',');
@@ -1105,7 +1110,7 @@ function generateDraw(){
 
   // Deduplicate by draw layout
   const seen=new Set();
-  const unique=allAttempts.filter(att=>{
+  const unique=attemptPool.filter(att=>{
     const k=drawKey(att);
     if(seen.has(k))return false;
     seen.add(k);return true;
@@ -1131,6 +1136,7 @@ function generateDraw(){
   // Score each attempt: 0=perfect, 1=one soft warning, 2+=multiple warnings
   function warningScore(att){
     let score=0;
+    if(att.issues&&att.issues.length>0) score+=att.issues.length*10; // hard conflicts weighted heavily
     if(att.hasGap) score+=1;
     score+=att.warnings.filter(x=>x.type==='club_gap').length;
     return score;

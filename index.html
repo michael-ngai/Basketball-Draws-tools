@@ -1972,7 +1972,8 @@ function preloadManualDraws(){
     {slot:'7:00pm',court:'Court 2',t1:'Silverfang U14',t2:'GSA Rageb8rs U14',div:'U14',isFillInGame:true,fillInTeam:['GSA Rageb8rs U14']},
   ]);
 
-  // RR remaining updated below — fill-in history recalculated by recalcFillInHistory()
+  // Always recalculate rrRemaining from scratch to avoid Firebase stale data
+  db.rrRemaining=generateFullRR();
   // Update RR remaining — remove matchups already played
   function removeFromRR(div, t1, t2){
     if(!db.rrRemaining[div]) return;

@@ -733,12 +733,29 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     if(!checkC1&&!checkC2) return false;
 
     // Hard block: already scheduled same-club game at this slot
-    return scheduled.some(g=>
+    const clashScheduled=scheduled.some(g=>
       g.slot===slot && (
         (checkC1 && (getClub(g.t1)===c1||getClub(g.t2)===c1)) ||
         (checkC2 && (getClub(g.t1)===c2||getClub(g.t2)===c2))
       )
     );
+    if(clashScheduled) return true;
+
+    // Also check pending matchups at this slot — if a pending same-club game
+    // has this slot as its ONLY option, placing here guarantees a clash
+    if(pendingMatchups&&pendingMatchups.length>0){
+      for(const m of pendingMatchups){
+        const mc1=getClub(m.t1), mc2=getClub(m.t2);
+        const sameC1=checkC1&&multiTeamClubs.has(mc1)&&(mc1===c1||mc2===c1);
+        const sameC2=checkC2&&multiTeamClubs.has(mc2)&&(mc1===c2||mc2===c2);
+        if(!sameC1&&!sameC2) continue;
+        const pendingAvail=bothAvail(w,m.t1,m.t2);
+        const otherSlots=pendingAvail.filter(s=>s!==slot);
+        // Only block if this is the ONLY slot for the pending game
+        if(pendingAvail.includes(slot)&&otherSlots.length===0) return true;
+      }
+    }
+    return false;
   }
 
   function pickSlot(avail, t1, t2, pendingMatchups=[]){

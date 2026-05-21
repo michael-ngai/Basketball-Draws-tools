@@ -441,7 +441,9 @@ async function loadFromFirebase(){
       db=data;
       // Re-run preload in case weeks 1-3 are missing from cloud data
       preloadManualDraws();
-      localStorage.setItem('pcyc_v8', JSON.stringify(data));
+      // Recalculate fillInHistory from all draws to ensure accuracy
+      recalcFillInHistory();
+      localStorage.setItem('pcyc_v8', JSON.stringify(db));
       // Re-render everything
       populateWeekSelects();
       renderAvailTable();
@@ -1259,6 +1261,21 @@ function selectOption(w,idx){
   renderSeasonGrid();
 }
 
+function recalcFillInHistory(){
+  // Reset and recalculate from all saved draws
+  if(!db.fillInHistory) db.fillInHistory={};
+  ['U10','U12','U14'].forEach(div=>{
+    db.fillInHistory[div]={};
+    TEAMS[div].forEach(t=>{db.fillInHistory[div][t]=0;});
+  });
+  // Go through all weeks and count fill-in appearances
+  for(let w=1;w<=TOTAL_WEEKS;w++){
+    if(db.draws[w]&&db.draws[w].length>0){
+      trackFillInHistory(db.draws[w]);
+    }
+  }
+}
+
 function trackFillInHistory(games){
   if(!db.fillInHistory)db.fillInHistory={};
   ['U10','U12','U14'].forEach(div=>{
@@ -1926,6 +1943,8 @@ function preloadManualDraws(){
 }
 
 preloadManualDraws();
+recalcFillInHistory();
+saveDB(db);
 populateWeekSelects();
 renderAvailTable();
 </script>

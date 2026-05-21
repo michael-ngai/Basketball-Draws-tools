@@ -1860,7 +1860,7 @@ function preloadManualDraws(){
 
   // Only load if week hasn't been set yet
   function setWeek(w, games){
-    // Always set weeks 1-3 from manual data if they have fewer than 7 games
+    // Always set weeks 1-4 from manual data if they have fewer than 7 games
     if(!db.draws[w] || db.draws[w].length<7){
       db.draws[w]=games;
     }
@@ -1899,8 +1899,19 @@ function preloadManualDraws(){
     {slot:'7:00pm',court:'Court 2',t1:'Free Flow U12',t2:'GSA Apex U12',div:'U12',isFillInGame:false},
   ]);
 
+  // Week 4 — 22 May 2026
+  setWeek(4, [
+    {slot:'4:45pm',court:'Court 2',t1:'Stingers U10',t2:'Free Flow U10',div:'U10',isFillInGame:false},
+    {slot:'5:30pm',court:'Court 1',t1:'GSA Apex U12',t2:'Silverfang U12',div:'U12',isFillInGame:false},
+    {slot:'5:30pm',court:'Court 2',t1:'Silverfang U10',t2:'Free Flow U10',div:'U10',isFillInGame:true,fillInTeam:['Free Flow U10']},
+    {slot:'6:15pm',court:'Court 1',t1:'GSA Rageb8rs U14',t2:'Team Renegades U14',div:'U14',isFillInGame:false},
+    {slot:'6:15pm',court:'Court 2',t1:'Silverfang U12',t2:'Free Flow U12',div:'U12',isFillInGame:true,fillInTeam:['Silverfang U12']},
+    {slot:'7:00pm',court:'Court 1',t1:'GSA PG Boys U14',t2:'GSA City Boys U14',div:'U14',isFillInGame:false},
+    {slot:'7:00pm',court:'Court 2',t1:'Silverfang U14',t2:'GSA Rageb8rs U14',div:'U14',isFillInGame:true,fillInTeam:['GSA Rageb8rs U14']},
+  ]);
+
   // Update fill-in history from these 3 weeks
-  [1,2,3].forEach(w=>{
+  [1,2,3,4].forEach(w=>{
     if(db.draws[w]) trackFillInHistory(db.draws[w]);
   });
 
@@ -1930,6 +1941,12 @@ function preloadManualDraws(){
   removeFromRR('U12','Free Flow U12','GSA Apex U12');
   removeFromRR('U14','GSA City Boys U14','GSA Rageb8rs U14');
   removeFromRR('U14','Silverfang U14','GSA PG Boys U14');
+
+  // Week 4 RR games
+  removeFromRR('U10','Stingers U10','Free Flow U10');
+  removeFromRR('U12','GSA Apex U12','Silverfang U12');
+  removeFromRR('U14','GSA Rageb8rs U14','Team Renegades U14');
+  removeFromRR('U14','GSA PG Boys U14','GSA City Boys U14');
 
   saveDB(db);
 }

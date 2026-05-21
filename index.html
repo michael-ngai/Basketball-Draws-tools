@@ -1086,6 +1086,9 @@ function generateDraw(){
   const w=currentWeek;
   if(w>=FINALS_SEMI){generateFinalsDraw(w);return;}
 
+  // Recalculate fill-in history excluding current week
+  recalcFillInHistory(w);
+
   const rrSnapshot=JSON.parse(JSON.stringify(db.rrRemaining));
 
   const noGapAttempts=[];
@@ -1267,13 +1270,17 @@ function selectOption(w,idx){
   renderSeasonGrid();
 }
 
-function recalcFillInHistory(){
+function recalcFillInHistory(upToWeek){
+  // Only count weeks up to (but not including) the week being generated
+  // Default: count all weeks that have results entered
   if(!db.fillInHistory) db.fillInHistory={};
   ['U10','U12','U14'].forEach(div=>{
     db.fillInHistory[div]={};
     TEAMS[div].forEach(t=>{db.fillInHistory[div][t]={count:0,lastWeek:0};});
   });
   for(let w=1;w<=TOTAL_WEEKS;w++){
+    // Skip weeks >= upToWeek (the week being generated)
+    if(upToWeek && w>=upToWeek) continue;
     if(db.draws[w]&&db.draws[w].length>0){
       trackFillInHistory(db.draws[w], w);
     }

@@ -1091,23 +1091,33 @@ function generateDraw(){
 
   const rrSnapshot=JSON.parse(JSON.stringify(db.rrRemaining));
 
-  const noGapAttempts=[];
-  const gapAttempts=[];
-
-  for(let seed=0;seed<8;seed++){
+  // Generate many attempts with different seeds
+  const allAttempts=[];
+  for(let seed=0;seed<16;seed++){
     const att=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,false);
-    if(!att.hasGap&&att.issues.length===0){
-      const dup=noGapAttempts.some(a=>JSON.stringify(a.scheduled.map(g=>g.t1+g.t2+g.slot+g.court))===JSON.stringify(att.scheduled.map(g=>g.t1+g.t2+g.slot+g.court)));
-      if(!dup)noGapAttempts.push(att);
-    }
+    if(att.issues.length===0) allAttempts.push(att);
     const attG=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true);
-    if(attG.issues.length===0&&attG.hasGap){
-      const dup=gapAttempts.some(a=>JSON.stringify(a.scheduled.map(g=>g.t1+g.t2+g.slot+g.court))===JSON.stringify(attG.scheduled.map(g=>g.t1+g.t2+g.slot+g.court)));
-      if(!dup)gapAttempts.push(attG);
-    }
+    if(attG.issues.length===0) allAttempts.push(attG);
   }
 
-  const allValid=[...noGapAttempts,...gapAttempts];
+  function drawKey(att){
+    return att.scheduled.map(g=>g.t1+'|'+g.t2+'|'+g.slot+'|'+g.court).sort().join(',');
+  }
+  function flagKey(att){
+    const gaps=att.warnings.filter(x=>x.type==='club_gap').map(x=>{
+      const m=x.msg.match(/(\w+) teams have/);
+      return m?m[1]:'unknown';
+    }).sort().join('|');
+    return (att.hasGap?'SCHGAP':'')+(gaps||'');
+  }
+
+  // Deduplicate by draw layout
+  const seen=new Set();
+  const unique=allAttempts.filter(att=>{
+    const k=drawKey(att);
+    if(seen.has(k))return false;
+    seen.add(k);return true;
+  });
 
   function showDebug(attempts){
     if(!attempts||!attempts.length)return;
@@ -1116,7 +1126,7 @@ function generateDraw(){
     document.getElementById('drawOutput').innerHTML+=box;
   }
 
-  if(allValid.length===0){
+  if(unique.length===0){
     const conflictAttempts=[];
     for(let seed=0;seed<3;seed++){
       conflictAttempts.push(tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true));
@@ -1126,11 +1136,40 @@ function generateDraw(){
     return;
   }
 
-  if(allValid.length===1){
-    const chosen=allValid[0];
+  // Build ideal 3 options with different flag profiles:
+  // Option 1: perfect (no flags at all)
+  // Option 2: exactly 1 soft warning
+  // Option 3: exactly 1 soft warning but DIFFERENT club/type than option 2
+  const perfect=unique.filter(a=>!a.hasGap&&a.warnings.length===0);
+  const singleFlag=unique.filter(a=>a.warnings.length===1||(a.hasGap&&a.warnings.filter(x=>x.type!=='schedule_gap').length===0));
+
+  const finalOptions=[];
+
+  // Option 1: best perfect draw
+  if(perfect.length>0) finalOptions.push(perfect[0]);
+
+  // Options 2 & 3: different flag profiles
+  const usedFlags=new Set(finalOptions.map(a=>flagKey(a)));
+  for(const att of [...singleFlag,...unique]){
+    if(finalOptions.length>=3)break;
+    const fk=flagKey(att);
+    if(!usedFlags.has(fk)){
+      finalOptions.push(att);
+      usedFlags.add(fk);
+    }
+  }
+
+  // Fill to 3 if needed
+  for(const att of unique){
+    if(finalOptions.length>=3)break;
+    if(!finalOptions.includes(att))finalOptions.push(att);
+  }
+
+  if(finalOptions.length===1){
+    const chosen=finalOptions[0];
     db.rrRemaining=chosen.rrWork;
     db.draws[w]=chosen.scheduled;
-    trackFillInHistory(chosen.scheduled);
+    trackFillInHistory(chosen.scheduled,w);
     saveDB(db);
     renderDrawOutput(chosen.scheduled,chosen.warnings,w);
     showDebug([chosen]);
@@ -1138,8 +1177,8 @@ function generateDraw(){
     return;
   }
 
-  renderConflictOptions(w,allValid,rrSnapshot,false);
-  showDebug(allValid);
+  renderConflictOptions(w,finalOptions,rrSnapshot,false);
+  showDebug(finalOptions);
   }catch(err){
     const out=document.getElementById('drawOutput');
     if(out)out.innerHTML='<div class="card"><div style="color:#A32D2D;font-size:13px;font-family:monospace"><b>Draw error:</b> '+err.message+'</div></div>';

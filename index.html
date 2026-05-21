@@ -885,11 +885,21 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     const preferredFillIn=avTeamsByRotation[seed%Math.max(avTeamsByRotation.length,1)];
     console.log('['+div+'] fillIn rotation sort:', avTeamsByRotation.map(t=>shortName(t)+'(c:'+(fillInCounts2[t]?fillInCounts2[t].count||0:0)+',lw:'+(fillInCounts2[t]?fillInCounts2[t].lastWeek||0:0)+')').join(' > '), '→ picked:', shortName(preferredFillIn), 'seed:',seed);
 
-    // Step 2: Pull RR games that EXCLUDE the preferred fill-in team
+    // Step 2: For odd divisions, fill-in team plays TWICE (1 RR + 1 fill-in)
+    // So we MUST include the fill-in team in an RR game
+    // Pull RR games that INCLUDE preferredFillIn first
     const rrNeeded=avTeams.length%2===0?gpw:gpw-1;
-    const rrWithoutFillIn=rrSorted.filter(p=>p[0]!==preferredFillIn&&p[1]!==preferredFillIn);
-    const rrWithFillIn=rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn);
-    const rrOrdered=[...rrWithoutFillIn,...rrWithFillIn];
+    const isOddDiv=avTeams.length%2!==0;
+    let rrOrdered;
+    if(isOddDiv){
+      // Fill-in team must play in RR — prioritise their matchups
+      const rrWithFillIn=rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn);
+      const rrWithoutFillIn=rrSorted.filter(p=>p[0]!==preferredFillIn&&p[1]!==preferredFillIn);
+      rrOrdered=[...rrWithFillIn,...rrWithoutFillIn];
+    } else {
+      // Even division — no fill-in, just use normal order
+      rrOrdered=rrSorted;
+    }
 
     const allMatchups=[];
     const newRR=[];
@@ -917,45 +927,19 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       // They should have no RR appearances (teamAppearances[preferredFillIn]===0)
       const fillInTeam=preferredFillIn;
 
-      // others = teams NOT already in RR games (excluding fill-in team)
+      // For odd divisions: fill-in team already played 1 RR game
+      // Fill-in game opponent = the team with NO RR game yet (bye team)
       const alreadyInRR=new Set(allMatchups.flatMap(m=>[m.t1,m.t2]));
-      const othersNotInRR=avTeams.filter(t=>t!==fillInTeam&&!alreadyInRR.has(t));
-
-      let others;
-      if(othersNotInRR.length>0){
-        others=othersNotInRR;
-      } else {
-        // Everyone is in RR — find which opponents have the most shared slots
-        // with the fill-in team that don't conflict with their own RR game slot
-        const allOthers=avTeams.filter(t=>t!==fillInTeam);
-
-        // For each potential opponent, figure out which RR game slots they'll use
-        const rrSlotsByTeam={};
-        allMatchups.forEach(m=>{
-          // We don't know exact slot yet, but we know shared avail
-          // Approximate: team's busiest constraint = fewest shared slots with fill-in
-          [m.t1,m.t2].forEach(t=>{
-            if(!rrSlotsByTeam[t])rrSlotsByTeam[t]=[];
-          });
-        });
-
-        // Sort: prefer opponents with MORE shared slots with fill-in team
-        // (more options = easier to schedule fill-in game around their RR slot)
-        allOthers.sort((a,b)=>{
-          const aShared=bothAvail(w,fillInTeam,a).length;
-          const bShared=bothAvail(w,fillInTeam,b).length;
-          return bShared-aShared; // most shared slots first
-        });
-        others=allOthers;
-      }
-      if(seed%3===1) others.reverse();
-      else if(seed%3===2&&others.length>1){const x=others.shift();others.push(x);}
-
-      // Try to pick the best fill-in opponent(s) based on shared availability
-      // Sort others by how many slots they share with fill-in team (most = easiest to schedule)
-      const sortedOthers=[...others].sort((a,b)=>
-        bothAvail(w,fillInTeam,b).length - bothAvail(w,fillInTeam,a).length
-      );
+      const byeTeams=avTeams.filter(t=>t!==fillInTeam&&!alreadyInRR.has(t));
+      const rrTeams=avTeams.filter(t=>t!==fillInTeam&&alreadyInRR.has(t));
+      // Prefer bye teams as fill-in opponents (they haven't played yet)
+      // Fall back to RR teams only if no bye teams exist
+      const sortedOthers=[
+        ...byeTeams.sort((a,b)=>bothAvail(w,fillInTeam,b).length-bothAvail(w,fillInTeam,a).length),
+        ...rrTeams.sort((a,b)=>bothAvail(w,fillInTeam,b).length-bothAvail(w,fillInTeam,a).length)
+      ];
+      if(seed%3===1) sortedOthers.reverse();
+      else if(seed%3===2&&sortedOthers.length>1){const x=sortedOthers.shift();sortedOthers.push(x);}
 
       if(sortedOthers.length>0){
         allMatchups.push({t1:fillInTeam,t2:sortedOthers[0],div,isRR:false,isFillInGame:true});

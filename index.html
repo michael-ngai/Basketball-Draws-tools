@@ -1514,7 +1514,9 @@ function renderSeasonGrid(){
     if(w===FINALS_SEMI||w===FINALS_GRAND)cls+=' finals';
     else if(hasResults)cls+=' done';
     else if(hasDraw)cls+=' hasdraw';
-    if(w===currentWeek)cls+=' current';
+    // Green border follows selected week in season tracker, or current week if none selected
+    const activeSeason=selectedSeasonWeek||currentWeek;
+    if(w===activeSeason)cls+=' current';
     const d=getWeekDate(w);
     const label=w===FINALS_SEMI?'SF':w===FINALS_GRAND?'GF':'W'+w;
     html+='<div class="'+cls+'" onclick="showWeekDetail('+w+')" title="'+fmtDate(d)+'"><div style="font-weight:500">'+label+'</div><div style="font-size:10px;color:#888780">'+d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</div></div>';
@@ -1538,13 +1540,18 @@ function renderSeasonGrid(){
   if(wgr)renderWeekGrid('weekGridR',currentWeekR,wgr._onSelect||null);
 }
 
+let selectedSeasonWeek=null;
+
 function showWeekDetail(w){
+  selectedSeasonWeek=w;
   const card=document.getElementById('weekDetailCard');
   const title=document.getElementById('weekDetailTitle');
   const body=document.getElementById('weekDetailBody');
   card.style.display='block';
   title.textContent='Week '+w+' — '+fmtDate(getWeekDate(w));
   renderWeekDetailBody(w,body);
+  // Re-render grid to move green border to clicked week
+  renderSeasonGrid();
 }
 
 function renderWeekDetailBody(w,body){

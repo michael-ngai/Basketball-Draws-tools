@@ -1104,11 +1104,16 @@ function generateDraw(){
     return att.scheduled.map(g=>g.t1+'|'+g.t2+'|'+g.slot+'|'+g.court).sort().join(',');
   }
   function flagKey(att){
-    const gaps=att.warnings.filter(x=>x.type==='club_gap').map(x=>{
-      const m=x.msg.match(/(\w+) teams have/);
-      return m?m[1]:'unknown';
-    }).sort().join('|');
-    return (att.hasGap?'SCHGAP':'')+(gaps||'');
+    // Build a signature of what warnings this draw has
+    const parts=[];
+    if(att.hasGap) parts.push('GAP');
+    att.warnings.filter(x=>x.type==='club_gap').forEach(x=>{
+      // Extract club name from message - strip emoji and match word before "teams"
+      const clean=x.msg.replace(/[^\w\s]/g,'').trim();
+      const m=clean.match(/(\w+)\s+teams\s+have/i);
+      if(m) parts.push('GAP_'+m[1].toUpperCase());
+    });
+    return parts.sort().join('|')||'PERFECT';
   }
 
   // Deduplicate by draw layout

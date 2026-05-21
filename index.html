@@ -1151,6 +1151,7 @@ function generateDraw(){
 
   // Sort all unique draws: fewest warnings first
   unique.sort((a,b)=>warningScore(a)-warningScore(b));
+  console.log('All unique options:',unique.map((a,i)=>'#'+i+' score='+warningScore(a)+' flag='+flagKey(a)).join(' | '));
 
   const finalOptions=[];
   const usedFlags=new Set();

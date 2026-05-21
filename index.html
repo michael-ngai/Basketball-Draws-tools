@@ -439,11 +439,13 @@ async function loadFromFirebase(){
       });
       window.db=data;
       db=data;
-      // Re-run preload in case weeks 1-3 are missing from cloud data
+      // Re-run preload to force-correct weeks 1-4 data
       preloadManualDraws();
-      // Recalculate fillInHistory from all draws to ensure accuracy
+      // Recalculate fillInHistory from all draws
       recalcFillInHistory();
+      // Force save corrected data back to Firebase
       localStorage.setItem('pcyc_v8', JSON.stringify(db));
+      if(window._fbSave) window._fbSave(db);
       // Re-render everything
       populateWeekSelects();
       renderAvailTable();
@@ -2021,7 +2023,9 @@ function preloadManualDraws(){
 
 preloadManualDraws();
 recalcFillInHistory();
-saveDB(db);
+// Save corrected preloaded data
+localStorage.setItem('pcyc_v8', JSON.stringify(db));
+if(window._fbSave) window._fbSave(db);
 populateWeekSelects();
 renderAvailTable();
 </script>

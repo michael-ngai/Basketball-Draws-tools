@@ -1081,7 +1081,6 @@ function generateDraw(){
   const w=currentWeek;
   if(w>=FINALS_SEMI){generateFinalsDraw(w);return;}
 
-  console.log('=== generateDraw W'+w+' fillInHistory:', JSON.stringify(db.fillInHistory));
   const rrSnapshot=JSON.parse(JSON.stringify(db.rrRemaining));
 
   const noGapAttempts=[];
@@ -1918,11 +1917,7 @@ function preloadManualDraws(){
     {slot:'7:00pm',court:'Court 2',t1:'Silverfang U14',t2:'GSA Rageb8rs U14',div:'U14',isFillInGame:true,fillInTeam:['GSA Rageb8rs U14']},
   ]);
 
-  // Update fill-in history from these 3 weeks
-  [1,2,3,4].forEach(w=>{
-    if(db.draws[w]) trackFillInHistory(db.draws[w]);
-  });
-
+  // RR remaining updated below — fill-in history recalculated by recalcFillInHistory()
   // Update RR remaining — remove matchups already played
   function removeFromRR(div, t1, t2){
     if(!db.rrRemaining[div]) return;

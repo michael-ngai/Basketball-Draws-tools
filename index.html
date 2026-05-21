@@ -388,10 +388,15 @@ function generateFullRR(){
   return rr;
 }
 function freshDB(){
-  const db={avail:{},draws:{},results:{},standings:{},dhCount:{}};
+  const db={avail:{},draws:{},results:{},standings:{},dhCount:{},fillInHistory:{}};
   ['U10','U12','U14'].forEach(div=>{
     db.standings[div]={};
-    TEAMS[div].forEach(t=>{db.standings[div][t]={w:0,l:0,d:0,pts:0};db.dhCount[t]=0;});
+    db.fillInHistory[div]={};
+    TEAMS[div].forEach(t=>{
+      db.standings[div][t]={w:0,l:0,d:0,pts:0};
+      db.dhCount[t]=0;
+      db.fillInHistory[div][t]=0; // count of times as fill-in
+    });
   });
   db.rrRemaining=generateFullRR();
   return db;
@@ -891,14 +896,20 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       avTeams.forEach(t=>{teamAppearances[t]=0;});
       allMatchups.forEach(m=>{teamAppearances[m.t1]++;teamAppearances[m.t2]++;});
 
-      // Pick fill-in team = most flexible team (most available slots)
-      // This gives the scheduler the most options when placing the extra game
-      // Among teams not yet in RR, prefer the one with most available slots
+      // Pick fill-in team using fair rotation:
+      // 1. Must be available (in avTeams)
+      // 2. Prefer team that has been fill-in least number of times this season
+      // 3. Among equal fill-in count, prefer most flexible (most available slots)
+      // 4. seed varies selection for multiple draw options
       const notYet=avTeams.filter(t=>teamAppearances[t]===0);
       const pool=notYet.length>0?notYet:avTeams.slice();
-      // Sort by number of available slots descending (most flexible first)
-      const poolSorted=[...pool].sort((a,b)=>getAvailSlots(w,b).length-getAvailSlots(w,a).length);
-      // seed varies which fill-in team we pick for different options
+      const fillInCounts=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};
+      const poolSorted=[...pool].sort((a,b)=>{
+        const aCount=fillInCounts[a]||0;
+        const bCount=fillInCounts[b]||0;
+        if(aCount!==bCount) return aCount-bCount; // least fill-ins first
+        return getAvailSlots(w,b).length-getAvailSlots(w,a).length; // most flexible as tiebreaker
+      });
       const fillInTeam=poolSorted[seed%Math.max(poolSorted.length,1)];
 
       // others = teams NOT already in RR games (excluding fill-in team)
@@ -1110,6 +1121,7 @@ function generateDraw(){
     const chosen=allValid[0];
     db.rrRemaining=chosen.rrWork;
     db.draws[w]=chosen.scheduled;
+    trackFillInHistory(chosen.scheduled);
     saveDB(db);
     renderDrawOutput(chosen.scheduled,chosen.warnings,w);
     showDebug([chosen]);
@@ -1234,13 +1246,35 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
 function selectOption(w,idx){
   const el=document.getElementById('drawOutput');
   const attempts=el._attempts;
-  const rrSnapshot=el._rrSnapshot;
   const chosen=attempts[idx];
   db.rrRemaining=chosen.rrWork;
   db.draws[w]=chosen.scheduled;
+  // Track fill-in history
+  trackFillInHistory(chosen.scheduled);
   saveDB(db);
   renderDrawOutput(chosen.scheduled,chosen.warnings||[],w);
   renderSeasonGrid();
+}
+
+function trackFillInHistory(games){
+  if(!db.fillInHistory)db.fillInHistory={};
+  ['U10','U12','U14'].forEach(div=>{
+    if(!db.fillInHistory[div])db.fillInHistory[div]={};
+    const divGames=games.filter(g=>g.div===div);
+    // Find fill-in team = team that appears most in this div's games
+    const teamCount={};
+    divGames.forEach(g=>{
+      teamCount[g.t1]=(teamCount[g.t1]||0)+1;
+      teamCount[g.t2]=(teamCount[g.t2]||0)+1;
+    });
+    const maxCount=Math.max(...Object.values(teamCount),0);
+    if(maxCount>1){
+      const fillInTeam=Object.keys(teamCount).find(t=>teamCount[t]===maxCount);
+      if(fillInTeam){
+        db.fillInHistory[div][fillInTeam]=(db.fillInHistory[div][fillInTeam]||0)+1;
+      }
+    }
+  });
 }
 
 function generateFinalsDraw(w){
@@ -1451,11 +1485,14 @@ function renderStandings(){
   let html='';
   ['U10','U12','U14'].forEach(div=>{
     const badge=DIV_COLORS[div];
+    const fillInCounts=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};
     html+='<div class="card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="div-badge '+badge+'">'+div+'</span><span class="section-title" style="margin:0">Standings</span></div>';
-    html+='<table class="std-table"><thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>D</th><th>Pts</th></tr></thead><tbody>';
+    html+='<table class="std-table"><thead><tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>D</th><th>Pts</th><th title="Times as fill-in team">Fill-in</th></tr></thead><tbody>';
     const ranked=Object.entries(db.standings[div]).sort((a,b)=>b[1].pts-a[1].pts);
     ranked.forEach(([t,s],i)=>{
-      html+='<tr><td class="rank">'+(i+1)+'</td><td>'+shortName(t)+'</td><td>'+s.w+'</td><td>'+s.l+'</td><td>'+s.d+'</td><td><strong>'+s.pts+'</strong></td></tr>';
+      const fi=fillInCounts[t]||0;
+      const fiStyle=fi>0?'color:#BA7517;font-weight:500':'color:#c0bdb5';
+      html+='<tr><td class="rank">'+(i+1)+'</td><td>'+shortName(t)+'</td><td>'+s.w+'</td><td>'+s.l+'</td><td>'+s.d+'</td><td><strong>'+s.pts+'</strong></td><td style="'+fiStyle+'">'+fi+'</td></tr>';
     });
     html+='</tbody></table></div>';
   });

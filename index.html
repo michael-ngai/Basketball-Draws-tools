@@ -1074,6 +1074,7 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
 }
 
 function generateDraw(){
+  try{
   const w=currentWeek;
   if(w>=FINALS_SEMI){generateFinalsDraw(w);return;}
 
@@ -1128,6 +1129,11 @@ function generateDraw(){
 
   renderConflictOptions(w,allValid,rrSnapshot,false);
   showDebug(allValid);
+  }catch(err){
+    const out=document.getElementById('drawOutput');
+    if(out)out.innerHTML='<div class="card"><div style="color:#A32D2D;font-size:13px;font-family:monospace"><b>Draw error:</b> '+err.message+'</div></div>';
+    console.error(err);
+  }
 }
 
 function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){

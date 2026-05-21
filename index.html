@@ -1834,6 +1834,86 @@ function updateClock(){
 updateClock();
 setInterval(updateClock,1000);
 
+// Pre-load first 3 weeks draws from manual draws
+function preloadManualDraws(){
+  if(!db.draws) db.draws={};
+
+  // Only load if week hasn't been set yet
+  function setWeek(w, games){
+    if(!db.draws[w] || db.draws[w].length===0){
+      db.draws[w]=games;
+    }
+  }
+
+  // Week 1 — 1 May 2026
+  setWeek(1, [
+    {slot:'4:45pm',court:'Court 1',t1:'Silverfang U10',t2:'Stingers U10',div:'U10',isFillInGame:false},
+    {slot:'5:30pm',court:'Court 1',t1:'Free Flow U10',t2:'Stingers U10',div:'U10',isFillInGame:true,fillInTeam:['Free Flow U10']},
+    {slot:'5:30pm',court:'Court 2',t1:'GSA Rageb8rs U14',t2:'Silverfang U14',div:'U14',isFillInGame:false},
+    {slot:'6:15pm',court:'Court 1',t1:'GSA City Boys U14',t2:'Team Renegades U14',div:'U14',isFillInGame:true,fillInTeam:['Team Renegades U14']},
+    {slot:'6:15pm',court:'Court 2',t1:'Free Flow U12',t2:'Silverfang U12',div:'U12',isFillInGame:false},
+    {slot:'7:00pm',court:'Court 1',t1:'Free Flow U12',t2:'GSA Apex U12',div:'U12',isFillInGame:true,fillInTeam:['Free Flow U12']},
+    {slot:'7:00pm',court:'Court 2',t1:'GSA PG Boys U14',t2:'Team Renegades U14',div:'U14',isFillInGame:false},
+  ]);
+
+  // Week 2 — 8 May 2026
+  setWeek(2, [
+    {slot:'4:45pm',court:'Court 2',t1:'Silverfang U10',t2:'Stingers U10',div:'U10',isFillInGame:true,fillInTeam:['Silverfang U10']},
+    {slot:'5:30pm',court:'Court 1',t1:'Team Renegades U14',t2:'Silverfang U14',div:'U14',isFillInGame:false},
+    {slot:'5:30pm',court:'Court 2',t1:'Silverfang U10',t2:'Free Flow U10',div:'U10',isFillInGame:false},
+    {slot:'6:15pm',court:'Court 1',t1:'GSA PG Boys U14',t2:'GSA City Boys U14',div:'U14',isFillInGame:false},
+    {slot:'6:15pm',court:'Court 2',t1:'Silverfang U12',t2:'Free Flow U12',div:'U12',isFillInGame:true,fillInTeam:['Silverfang U12']},
+    {slot:'7:00pm',court:'Court 1',t1:'GSA City Boys U14',t2:'GSA Rageb8rs U14',div:'U14',isFillInGame:true,fillInTeam:['GSA City Boys U14']},
+    {slot:'7:00pm',court:'Court 2',t1:'GSA Apex U12',t2:'Free Flow U12',div:'U12',isFillInGame:false},
+  ]);
+
+  // Week 3 — 15 May 2026
+  setWeek(3, [
+    {slot:'4:45pm',court:'Court 2',t1:'Stingers U10',t2:'Silverfang U10',div:'U10',isFillInGame:false},
+    {slot:'5:30pm',court:'Court 1',t1:'Silverfang U12',t2:'GSA Apex U12',div:'U12',isFillInGame:true,fillInTeam:['GSA Apex U12']},
+    {slot:'5:30pm',court:'Court 2',t1:'Free Flow U10',t2:'Stingers U10',div:'U10',isFillInGame:true,fillInTeam:['Stingers U10']},
+    {slot:'6:15pm',court:'Court 1',t1:'GSA City Boys U14',t2:'GSA Rageb8rs U14',div:'U14',isFillInGame:false},
+    {slot:'6:15pm',court:'Court 2',t1:'Team Renegades U14',t2:'GSA PG Boys U14',div:'U14',isFillInGame:true,fillInTeam:['GSA PG Boys U14']},
+    {slot:'7:00pm',court:'Court 1',t1:'Silverfang U14',t2:'GSA PG Boys U14',div:'U14',isFillInGame:false},
+    {slot:'7:00pm',court:'Court 2',t1:'Free Flow U12',t2:'GSA Apex U12',div:'U12',isFillInGame:false},
+  ]);
+
+  // Update fill-in history from these 3 weeks
+  [1,2,3].forEach(w=>{
+    if(db.draws[w]) trackFillInHistory(db.draws[w]);
+  });
+
+  // Update RR remaining — remove matchups already played
+  function removeFromRR(div, t1, t2){
+    if(!db.rrRemaining[div]) return;
+    const idx=db.rrRemaining[div].findIndex(p=>
+      (p[0]===t1&&p[1]===t2)||(p[0]===t2&&p[1]===t1)
+    );
+    if(idx>-1) db.rrRemaining[div].splice(idx,1);
+  }
+
+  // Week 1 RR games
+  removeFromRR('U10','Silverfang U10','Stingers U10');
+  removeFromRR('U14','GSA Rageb8rs U14','Silverfang U14');
+  removeFromRR('U12','Free Flow U12','Silverfang U12');
+  removeFromRR('U14','GSA PG Boys U14','Team Renegades U14');
+
+  // Week 2 RR games
+  removeFromRR('U10','Silverfang U10','Free Flow U10');
+  removeFromRR('U14','Team Renegades U14','Silverfang U14');
+  removeFromRR('U14','GSA PG Boys U14','GSA City Boys U14');
+  removeFromRR('U12','GSA Apex U12','Free Flow U12');
+
+  // Week 3 RR games
+  removeFromRR('U10','Stingers U10','Silverfang U10');
+  removeFromRR('U12','Free Flow U12','GSA Apex U12');
+  removeFromRR('U14','GSA City Boys U14','GSA Rageb8rs U14');
+  removeFromRR('U14','Silverfang U14','GSA PG Boys U14');
+
+  saveDB(db);
+}
+
+preloadManualDraws();
 populateWeekSelects();
 renderAvailTable();
 </script>

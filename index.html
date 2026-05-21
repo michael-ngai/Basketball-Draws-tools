@@ -959,6 +959,7 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
 
     // Use preferredFillIn as the fill-in team label
     const theFillInTeam=preferredFillIn||null;
+    if(seed===0) console.log('THEFILLTEAM ['+div+']:', shortName(theFillInTeam||'none'), '| matchups:', allMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)+(m.isFillInGame?' FI':' RR')).join(' | '));
     allMatchups.forEach(m=>{
       if(m.isFillInGame&&theFillInTeam){
         m.fillInTeam=[theFillInTeam];

@@ -1282,7 +1282,8 @@ function trackFillInHistory(games){
     const fillInGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
     if(fillInGame&&fillInGame.fillInTeam){
       const fillInTeam=fillInGame.fillInTeam[0];
-      if(fillInTeam&&db.fillInHistory[div]){
+      console.log('trackFillIn:', div, fillInTeam);
+      if(fillInTeam&&db.fillInHistory[div]!==undefined){
         db.fillInHistory[div][fillInTeam]=(db.fillInHistory[div][fillInTeam]||0)+1;
       }
     }

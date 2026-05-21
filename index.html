@@ -974,12 +974,13 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       }
     }
 
-    // Use preferredFillIn as the fill-in team label
-    const theFillInTeam=preferredFillIn||null;
-    if(seed===0) console.log('THEFILLTEAM ['+div+']:', shortName(theFillInTeam||'none'), '| matchups:', allMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)+(m.isFillInGame?' FI':' RR')).join(' | '));
+    // Find who actually plays twice — that is the real fill-in team
+    const playCount={};
+    allMatchups.forEach(m=>{playCount[m.t1]=(playCount[m.t1]||0)+1;playCount[m.t2]=(playCount[m.t2]||0)+1;});
+    const actualFillIn=Object.keys(playCount).find(t=>playCount[t]>1)||preferredFillIn;
     allMatchups.forEach(m=>{
-      if(m.isFillInGame&&theFillInTeam){
-        m.fillInTeam=[theFillInTeam];
+      if(m.isFillInGame&&actualFillIn){
+        m.fillInTeam=[actualFillIn];
       }
     });
 
@@ -1171,17 +1172,20 @@ function generateDraw(){
     if(fiGame) correctFillIns[div]=fiGame.fillInTeam[0];
   });
 
-  // Only keep options that use correct fill-in teams AND have full game counts
+  // Only keep options that have full game counts AND correct fill-in team
   const filtered=unique.filter(att=>{
     return ['U10','U12','U14'].every(div=>{
       const divGames=att.scheduled.filter(g=>g.div===div);
       // Must have correct number of games
       if(divGames.length<expectedGames[div]) return false;
-      // Must use correct fill-in team
+      // Must use correct fill-in team (the one that actually plays twice)
       if(!correctFillIns[div]) return true;
-      const fiGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
-      if(!fiGame) return true;
-      return fiGame.fillInTeam[0]===correctFillIns[div];
+      // Find who actually plays twice in this draw
+      const pc={};
+      divGames.forEach(g=>{pc[g.t1]=(pc[g.t1]||0)+1;pc[g.t2]=(pc[g.t2]||0)+1;});
+      const actualFI=Object.keys(pc).find(t=>pc[t]>1);
+      if(!actualFI) return true; // even division, no fill-in needed
+      return actualFI===correctFillIns[div];
     });
   });
   const finalPool=filtered.length>0?filtered:unique;

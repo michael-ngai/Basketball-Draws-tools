@@ -857,6 +857,12 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
 
     debugLog.push(`<b>[${div} RR queue]</b> ${rrWork[div].slice(0,6).map(p=>shortName(p[0])+' vs '+shortName(p[1])).join(' | ')||'empty'}`);
 
+    // Sort RR queue - deprioritise last week's matchups
+    const rrSorted=[
+      ...rrWork[div].filter(p=>!wasPlayedLastWeek(p[0],p[1])),
+      ...rrWork[div].filter(p=>wasPlayedLastWeek(p[0],p[1]))
+    ];
+
     // Step 1: Determine preferred fill-in team based on rotation history
     // Pick team with fewest fill-in appearances; tiebreak by least flexible (fewest slots)
     const fillInCounts2=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};

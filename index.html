@@ -962,9 +962,8 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       }
     }
 
-    // Use explicitly chosen fillInTeam — don't re-detect by appearance count
-    // because opponent of fill-in game may also appear twice (unavoidable with 3 teams)
-    const theFillInTeam=fillInTeam||null;
+    // Use preferredFillIn as the fill-in team label
+    const theFillInTeam=preferredFillIn||null;
     allMatchups.forEach(m=>{
       if(m.isFillInGame&&theFillInTeam){
         m.fillInTeam=[theFillInTeam];

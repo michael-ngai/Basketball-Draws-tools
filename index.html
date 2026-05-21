@@ -857,37 +857,32 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
 
     debugLog.push(`<b>[${div} RR queue]</b> ${rrWork[div].slice(0,6).map(p=>shortName(p[0])+' vs '+shortName(p[1])).join(' | ')||'empty'}`);
 
+    // Step 1: Determine preferred fill-in team based on rotation history
+    // Pick team with fewest fill-in appearances; tiebreak by least flexible (fewest slots)
+    const fillInCounts2=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};
+    const avTeamsByRotation=[...avTeams].sort((a,b)=>{
+      const aCount=fillInCounts2[a]||0;
+      const bCount=fillInCounts2[b]||0;
+      if(aCount!==bCount) return aCount-bCount;
+      return getAvailSlots(w,a).length-getAvailSlots(w,b).length;
+    });
+    const preferredFillIn=avTeamsByRotation[seed%Math.max(avTeamsByRotation.length,1)];
+
+    // Step 2: Pull RR games that EXCLUDE the preferred fill-in team
+    const rrNeeded=avTeams.length%2===0?gpw:gpw-1;
+    const rrWithoutFillIn=rrSorted.filter(p=>p[0]!==preferredFillIn&&p[1]!==preferredFillIn);
+    const rrWithFillIn=rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn);
+    const rrOrdered=[...rrWithoutFillIn,...rrWithFillIn];
+
     const allMatchups=[];
     const newRR=[];
     const rrAppearances={};
     avTeams.forEach(t=>{rrAppearances[t]=0;});
 
-    const rrSorted=[
-      ...rrWork[div].filter(p=>!wasPlayedLastWeek(p[0],p[1])),
-      ...rrWork[div].filter(p=>wasPlayedLastWeek(p[0],p[1]))
-    ];
-
-    // We need (gpw-1) RR games for odd divisions (1 team will be fill-in)
-    // Pick RR games that EXCLUDE the most flexible team (most slots available)
-    // so that team can be the fill-in team with max scheduling flexibility
-    const rrNeeded=avTeams.length%2===0?gpw:gpw-1; // odd div: leave 1 team out for fill-in
-    const flexibilityScore=t=>getAvailSlots(w,t).length;
-    const mostFlexible=avTeams.slice().sort((a,b)=>flexibilityScore(b)-flexibilityScore(a));
-    // Preferred fill-in = most flexible team (varies by seed for multiple options)
-    const preferredFillIn=mostFlexible[seed%Math.max(mostFlexible.length,1)];
-
-    // First pass: try to pick RR games that don't involve preferredFillIn
-    const rrWithoutFillIn=rrSorted.filter(p=>p[0]!==preferredFillIn&&p[1]!==preferredFillIn);
-    const rrWithFillIn=rrSorted.filter(p=>p[0]===preferredFillIn||p[1]===preferredFillIn);
-    const rrOrdered=[...rrWithoutFillIn,...rrWithFillIn];
-
     for(const pair of rrOrdered){
       const t1=pair[0],t2=pair[1];
       const wouldExceed=(rrAppearances[t1]||0)>=1||(rrAppearances[t2]||0)>=1;
       if(allMatchups.length<rrNeeded&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
-        allMatchups.push({t1,t2,div,isRR:true,isFillInGame:false});
-        rrAppearances[t1]++;rrAppearances[t2]++;
-      } else if(allMatchups.length>=rrNeeded&&allMatchups.length<gpw&&avTeams.includes(t1)&&avTeams.includes(t2)&&!wouldExceed){
         allMatchups.push({t1,t2,div,isRR:true,isFillInGame:false});
         rrAppearances[t1]++;rrAppearances[t2]++;
       } else {
@@ -901,21 +896,9 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       avTeams.forEach(t=>{teamAppearances[t]=0;});
       allMatchups.forEach(m=>{teamAppearances[m.t1]++;teamAppearances[m.t2]++;});
 
-      // Pick fill-in team using fair rotation:
-      // 1. Must be available (in avTeams)
-      // 2. Prefer team that has been fill-in least number of times this season
-      // 3. Among equal fill-in count, prefer most flexible (most available slots)
-      // 4. seed varies selection for multiple draw options
-      const notYet=avTeams.filter(t=>teamAppearances[t]===0);
-      const pool=notYet.length>0?notYet:avTeams.slice();
-      const fillInCounts=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};
-      const poolSorted=[...pool].sort((a,b)=>{
-        const aCount=fillInCounts[a]||0;
-        const bCount=fillInCounts[b]||0;
-        if(aCount!==bCount) return aCount-bCount; // least fill-ins first
-        return getAvailSlots(w,b).length-getAvailSlots(w,a).length; // most flexible as tiebreaker
-      });
-      const fillInTeam=poolSorted[seed%Math.max(poolSorted.length,1)];
+      // Use the preferredFillIn already determined above
+      // They should have no RR appearances (teamAppearances[preferredFillIn]===0)
+      const fillInTeam=preferredFillIn;
 
       // others = teams NOT already in RR games (excluding fill-in team)
       const alreadyInRR=new Set(allMatchups.flatMap(m=>[m.t1,m.t2]));
@@ -973,11 +956,14 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
       }
     }
 
-    const teamCount={};
-    allMatchups.forEach(m=>{teamCount[m.t1]=(teamCount[m.t1]||0)+1;teamCount[m.t2]=(teamCount[m.t2]||0)+1;});
-    const maxCount=Math.max(...Object.values(teamCount),0);
-    const theFillInTeam=maxCount>1?Object.keys(teamCount).find(t=>teamCount[t]===maxCount):null;
-    allMatchups.forEach(m=>{if(theFillInTeam&&m.isFillInGame)m.fillInTeam=[theFillInTeam];});
+    // Use explicitly chosen fillInTeam — don't re-detect by appearance count
+    // because opponent of fill-in game may also appear twice (unavoidable with 3 teams)
+    const theFillInTeam=fillInTeam||null;
+    allMatchups.forEach(m=>{
+      if(m.isFillInGame&&theFillInTeam){
+        m.fillInTeam=[theFillInTeam];
+      }
+    });
 
     debugLog.push(`<b>[${div} matchups]</b> ${allMatchups.map(m=>shortName(m.t1)+' vs '+shortName(m.t2)+(m.isRR?' (RR)':' (fill-in)')).join(' | ')}`);
     globalMatchups.push(...allMatchups);
@@ -1281,16 +1267,11 @@ function trackFillInHistory(games){
   ['U10','U12','U14'].forEach(div=>{
     if(!db.fillInHistory[div])db.fillInHistory[div]={};
     const divGames=games.filter(g=>g.div===div);
-    // Find fill-in team = team that appears most in this div's games
-    const teamCount={};
-    divGames.forEach(g=>{
-      teamCount[g.t1]=(teamCount[g.t1]||0)+1;
-      teamCount[g.t2]=(teamCount[g.t2]||0)+1;
-    });
-    const maxCount=Math.max(...Object.values(teamCount),0);
-    if(maxCount>1){
-      const fillInTeam=Object.keys(teamCount).find(t=>teamCount[t]===maxCount);
-      if(fillInTeam){
+    // Find fill-in team from the fillInTeam field on fill-in games
+    const fillInGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
+    if(fillInGame&&fillInGame.fillInTeam){
+      const fillInTeam=fillInGame.fillInTeam[0];
+      if(fillInTeam&&db.fillInHistory[div]){
         db.fillInHistory[div][fillInTeam]=(db.fillInHistory[div][fillInTeam]||0)+1;
       }
     }

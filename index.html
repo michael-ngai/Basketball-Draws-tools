@@ -438,6 +438,8 @@ async function loadFromFirebase(){
       });
       window.db=data;
       db=data;
+      // Re-run preload in case weeks 1-3 are missing from cloud data
+      preloadManualDraws();
       localStorage.setItem('pcyc_v8', JSON.stringify(data));
       // Re-render everything
       populateWeekSelects();
@@ -1840,7 +1842,8 @@ function preloadManualDraws(){
 
   // Only load if week hasn't been set yet
   function setWeek(w, games){
-    if(!db.draws[w] || db.draws[w].length===0){
+    // Always set weeks 1-3 from manual data if they have fewer than 7 games
+    if(!db.draws[w] || db.draws[w].length<7){
       db.draws[w]=games;
     }
   }

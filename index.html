@@ -1168,18 +1168,10 @@ function generateDraw(){
     }
   }
 
-  // If we couldn't find 3 distinct flag profiles, fill with best remaining
-  // but only if they have the same or fewer warnings than last option
-  if(finalOptions.length<3){
-    const lastScore=finalOptions.length>0?warningScore(finalOptions[finalOptions.length-1]):99;
-    for(const att of unique){
-      if(finalOptions.length>=3)break;
-      if(!finalOptions.includes(att)&&warningScore(att)<=lastScore+1){
-        finalOptions.push(att);
-      }
-    }
-  }
+  // If we couldn't find 3 distinct flag profiles, DON'T pad with duplicates
+  // Just show what we have - better to show 1 honest option than 3 identical ones
 
+  // If only 1 distinct option, auto-save it
   if(finalOptions.length===1){
     const chosen=finalOptions[0];
     db.rrRemaining=chosen.rrWork;
@@ -1192,6 +1184,7 @@ function generateDraw(){
     return;
   }
 
+  // Add note explaining why options are limited if fewer than 3
   renderConflictOptions(w,finalOptions,rrSnapshot,false);
   showDebug(finalOptions);
   }catch(err){
@@ -1213,7 +1206,14 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
     html+='<span style="font-size:13px;font-weight:500;color:#085041">'+attempts.length+' valid options — Week '+w+' &nbsp;</span>';
   }
   html+='<span style="font-size:12px;color:#888780">'+weekDate+'</span></div>';
-  html+='<p style="font-size:13px;color:#888780;margin-bottom:1rem">'+(hasConflicts?'All options have issues. Pick the best one and edit manually after.':'Multiple valid draws found. Pick the one you prefer.')+'</p>';
+  const optionNote=hasConflicts
+    ?'All options have issues. Pick the best one and edit manually after.'
+    :attempts.length===1
+      ?'Only 1 valid draw exists with this availability. Used automatically.'
+      :attempts.length<3
+        ?'Only '+attempts.length+' distinct options found with this availability — the Free Flow gap cannot be avoided this week.'
+        :'Multiple valid draws found. Pick the one you prefer.';
+  html+='<p style="font-size:13px;color:#888780;margin-bottom:1rem">'+optionNote+'</p>';
 
   attempts.forEach((att,i)=>{
     const optNum=i+1;

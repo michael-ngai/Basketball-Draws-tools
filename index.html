@@ -1153,7 +1153,11 @@ function generateDraw(){
 
   // Sort all unique draws: fewest warnings first
   unique.sort((a,b)=>warningScore(a)-warningScore(b));
-  console.log('All unique options:',unique.map((a,i)=>'#'+i+' score='+warningScore(a)+' flag='+flagKey(a)).join(' | '));
+  console.log('All unique options:',unique.map((a,i)=>{
+    const u10fi=a.scheduled.find(g=>g.div==='U10'&&g.isFillInGame);
+    const fiTeam=u10fi&&u10fi.fillInTeam?u10fi.fillInTeam[0]:'?';
+    return '#'+i+' score='+warningScore(a)+' flag='+flagKey(a)+' U10fi='+shortName(fiTeam);
+  }).join(' | '));
 
   const finalOptions=[];
   const usedFlags=new Set();

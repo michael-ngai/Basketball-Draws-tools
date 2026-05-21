@@ -1523,7 +1523,7 @@ function renderSeasonGrid(){
     if(w===activeSeason)cls+=' current';
     const d=getWeekDate(w);
     const label=w===FINALS_SEMI?'SF':w===FINALS_GRAND?'GF':'W'+w;
-    html+='<div class="'+cls+'" onclick="showWeekDetail('+w+')" title="'+fmtDate(d)+'"><div style="font-weight:500">'+label+'</div><div style="font-size:10px;color:#888780">'+d.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+'</div></div>';
+    html+='<div class="'+cls+'" onclick="showWeekDetail('+w+')" title="'+fmtDate(d)+'"><div style="font-weight:600">'+label+'</div><div style="font-size:10px;opacity:0.8">'+d.getDate()+' '+d.toLocaleDateString('en-AU',{month:'short'})+' '+d.getFullYear()+'</div></div>';
     if(hasResults)played+=Object.keys(db.results[w]).length;
   }
   grid.innerHTML=html;

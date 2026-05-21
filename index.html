@@ -867,10 +867,14 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     // Pick team with fewest fill-in appearances; tiebreak by least flexible (fewest slots)
     const fillInCounts2=db.fillInHistory&&db.fillInHistory[div]?db.fillInHistory[div]:{};
     const avTeamsByRotation=[...avTeams].sort((a,b)=>{
-      const aCount=fillInCounts2[a]||0;
-      const bCount=fillInCounts2[b]||0;
-      if(aCount!==bCount) return aCount-bCount;
-      return getAvailSlots(w,a).length-getAvailSlots(w,b).length;
+      const aData=fillInCounts2[a]||{count:0,lastWeek:0};
+      const bData=fillInCounts2[b]||{count:0,lastWeek:0};
+      const aCount=typeof aData==='object'?aData.count:aData;
+      const bCount=typeof bData==='object'?bData.count:bData;
+      const aLast=typeof aData==='object'?aData.lastWeek:0;
+      const bLast=typeof bData==='object'?bData.lastWeek:0;
+      if(aCount!==bCount) return aCount-bCount; // fewest fill-ins first
+      return aLast-bLast; // if equal count, pick team whose fill-in was longest ago
     });
     const preferredFillIn=avTeamsByRotation[seed%Math.max(avTeamsByRotation.length,1)];
 
@@ -1260,34 +1264,34 @@ function selectOption(w,idx){
 }
 
 function recalcFillInHistory(){
-  // Reset and recalculate from all saved draws
   if(!db.fillInHistory) db.fillInHistory={};
   ['U10','U12','U14'].forEach(div=>{
     db.fillInHistory[div]={};
-    TEAMS[div].forEach(t=>{db.fillInHistory[div][t]=0;});
+    TEAMS[div].forEach(t=>{db.fillInHistory[div][t]={count:0,lastWeek:0};});
   });
-  // Go through all weeks and count fill-in appearances
   for(let w=1;w<=TOTAL_WEEKS;w++){
     if(db.draws[w]&&db.draws[w].length>0){
-      console.log('recalc week', w, 'games:', db.draws[w].length);
-      trackFillInHistory(db.draws[w]);
+      trackFillInHistory(db.draws[w], w);
     }
   }
-  console.log('=== recalcFillInHistory result:', JSON.stringify(db.fillInHistory));
 }
 
-function trackFillInHistory(games){
+function trackFillInHistory(games, weekNum){
   if(!db.fillInHistory)db.fillInHistory={};
   ['U10','U12','U14'].forEach(div=>{
     if(!db.fillInHistory[div])db.fillInHistory[div]={};
+    TEAMS[div].forEach(t=>{
+      if(!db.fillInHistory[div][t]||typeof db.fillInHistory[div][t]!=='object'){
+        db.fillInHistory[div][t]={count:0,lastWeek:0};
+      }
+    });
     const divGames=games.filter(g=>g.div===div);
-    // Find fill-in team from the fillInTeam field on fill-in games
     const fillInGame=divGames.find(g=>g.isFillInGame&&g.fillInTeam&&g.fillInTeam.length>0);
     if(fillInGame&&fillInGame.fillInTeam){
       const fillInTeam=fillInGame.fillInTeam[0];
-      console.log('trackFillIn:', div, fillInTeam);
-      if(fillInTeam&&db.fillInHistory[div]!==undefined){
-        db.fillInHistory[div][fillInTeam]=(db.fillInHistory[div][fillInTeam]||0)+1;
+      if(fillInTeam&&db.fillInHistory[div][fillInTeam]!==undefined){
+        db.fillInHistory[div][fillInTeam].count=(db.fillInHistory[div][fillInTeam].count||0)+1;
+        db.fillInHistory[div][fillInTeam].lastWeek=weekNum||0;
       }
     }
   });

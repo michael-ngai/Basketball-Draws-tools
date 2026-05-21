@@ -1077,6 +1077,7 @@ function generateDraw(){
   const w=currentWeek;
   if(w>=FINALS_SEMI){generateFinalsDraw(w);return;}
 
+  console.log('=== generateDraw W'+w+' fillInHistory:', JSON.stringify(db.fillInHistory));
   const rrSnapshot=JSON.parse(JSON.stringify(db.rrRemaining));
 
   const noGapAttempts=[];
@@ -1268,9 +1269,11 @@ function recalcFillInHistory(){
   // Go through all weeks and count fill-in appearances
   for(let w=1;w<=TOTAL_WEEKS;w++){
     if(db.draws[w]&&db.draws[w].length>0){
+      console.log('recalc week', w, 'games:', db.draws[w].length);
       trackFillInHistory(db.draws[w]);
     }
   }
+  console.log('=== recalcFillInHistory result:', JSON.stringify(db.fillInHistory));
 }
 
 function trackFillInHistory(games){

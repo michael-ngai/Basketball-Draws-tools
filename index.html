@@ -98,72 +98,72 @@
 </script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;background:#f5f5f3;color:#1a1a18;padding:1rem}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);padding:1rem}
 .app{max-width:900px;margin:0 auto;padding:1rem 0}
 .nav{display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid #e0ddd5;padding-bottom:0}
-.nav button{background:none;border:none;padding:8px 16px;font-size:14px;font-weight:400;color:#888780;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0}
-.nav button.active{color:#1a1a18;font-weight:500;border-bottom:2px solid #1a1a18}
+.nav button{background:none;border:none;padding:8px 16px;font-size:14px;font-weight:400;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0}
+.nav button.active{color:var(--text);font-weight:500;border-bottom:2px solid #1a1a18}
 .page{display:none}.page.active{display:block}
-.section-title{font-size:13px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
-.card{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
+.section-title{font-size:13px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem}
 .week-bar{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
-.week-bar label{font-size:14px;color:#888780}
-.week-bar select{font-size:14px;padding:6px 10px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18}
-.week-bar .week-label{font-size:14px;font-weight:500;color:#1a1a18}
+.week-bar label{font-size:14px;color:var(--muted)}
+.week-bar select{font-size:14px;padding:6px 10px;border-radius:8px;border:0.5px solid var(--border2);background:var(--surface);color:var(--text)}
+.week-bar .week-label{font-size:14px;font-weight:500;color:var(--text)}
 .avail-table{width:100%;border-collapse:collapse;font-size:13px}
-.avail-table th{text-align:left;padding:8px 10px;font-weight:500;color:#888780;border-bottom:0.5px solid #e0ddd5}
+.avail-table th{text-align:left;padding:8px 10px;font-weight:500;color:var(--muted);border-bottom:0.5px solid var(--border)}
 .avail-table th.slot-h{text-align:center;min-width:60px}
-.avail-table td{padding:6px 10px;border-bottom:0.5px solid #e0ddd5}
+.avail-table td{padding:6px 10px;border-bottom:0.5px solid var(--border)}
 .avail-table td.team-cell{font-weight:500;white-space:nowrap}
 .avail-table td.slot-cell{text-align:center}
-.div-header td{background:#f5f5f3;font-weight:500;font-size:12px;color:#888780;padding:4px 10px;letter-spacing:.04em}
+.div-header td{background:var(--bg);font-weight:500;font-size:12px;color:var(--muted);padding:4px 10px;letter-spacing:.04em}
 .cb{width:16px;height:16px;cursor:pointer;accent-color:#1D9E75}
-.btn{padding:8px 18px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18;font-size:14px;cursor:pointer;font-weight:500}
-.btn:hover{background:#f5f5f3}
+.btn{padding:8px 18px;border-radius:8px;border:0.5px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px;cursor:pointer;font-weight:500}
+.btn:hover{background:var(--bg)}
 .btn.primary{background:#1D9E75;border-color:#1D9E75;color:#fff}
 .btn.primary:hover{background:#0F6E56}
 .btn-row{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
 .draw-output{margin-top:1.5rem}
-.draw-game{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:0.5px solid #e0ddd5;margin-bottom:8px;background:#fff}
-.draw-game .time{font-size:12px;font-weight:500;color:#888780;min-width:48px}
-.draw-game .court{font-size:11px;padding:2px 8px;border-radius:20px;background:#f5f5f3;color:#888780;min-width:56px;text-align:center}
+.draw-game{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border);margin-bottom:8px;background:var(--surface)}
+.draw-game .time{font-size:12px;font-weight:500;color:var(--muted);min-width:48px}
+.draw-game .court{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bg);color:var(--muted);min-width:56px;text-align:center}
 .draw-game .matchup{font-size:14px;font-weight:500;flex:1}
 .draw-game .div-badge{font-size:11px;padding:2px 8px;border-radius:20px;min-width:40px;text-align:center}
-.u10-badge{background:#E1F5EE;color:#085041}
-.u12-badge{background:#E6F1FB;color:#0C447C}
-.u14-badge{background:#FAEEDA;color:#633806}
-.flag-box{border-left:3px solid #E24B4A;padding:10px 14px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px;color:#1a1a18}
+.u10-badge{background:var(--u10bg);color:var(--u10txt)}
+.u12-badge{background:var(--u12bg);color:var(--u12txt)}
+.u14-badge{background:var(--u14bg);color:var(--u14txt)}
+.flag-box{border-left:3px solid #E24B4A;padding:10px 14px;background:var(--surface);border-radius:0 8px 8px 0;margin-bottom:8px;font-size:13px;color:var(--text)}
 .flag-box .flag-title{font-weight:500;color:#A32D2D;margin-bottom:4px;font-size:12px}
 .standings-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 @media(max-width:600px){.standings-wrap{grid-template-columns:1fr}}
 .std-table{width:100%;border-collapse:collapse;font-size:13px}
-.std-table th{padding:6px 8px;text-align:left;font-weight:500;font-size:12px;color:#888780;border-bottom:0.5px solid #e0ddd5}
-.std-table td{padding:6px 8px;border-bottom:0.5px solid #e0ddd5}
+.std-table th{padding:6px 8px;text-align:left;font-weight:500;font-size:12px;color:var(--muted);border-bottom:0.5px solid var(--border)}
+.std-table td{padding:6px 8px;border-bottom:0.5px solid var(--border)}
 .std-table tr:last-child td{border-bottom:none}
-.rank{font-weight:500;color:#888780;font-size:12px}
+.rank{font-weight:500;color:var(--muted);font-size:12px}
 .season-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:1rem}
-.week-chip{padding:6px 4px;border-radius:8px;border:0.5px solid #e0ddd5;text-align:center;font-size:12px;cursor:pointer;background:#fff}
-.week-chip.done{background:#E1F5EE;border-color:#5DCAA5;color:#085041}
-.week-chip.hasdraw{background:#f0f9f5;border-color:#9FE1CB;color:#085041}
+.week-chip{padding:6px 4px;border-radius:8px;border:0.5px solid var(--border);text-align:center;font-size:12px;cursor:pointer;background:var(--surface)}
+.week-chip.done{background:var(--chipdone);border-color:var(--chipdone-border);color:var(--chipdone-txt)}
+.week-chip.hasdraw{background:var(--chiphas);border-color:var(--chiphas-border);color:var(--chipdone-txt)}
 .week-chip.current{border:2px solid #1D9E75;font-weight:500}
-.week-chip.finals{background:#FAEEDA;border-color:#EF9F27;color:#412402}
+.week-chip.finals{background:var(--chipfinals);border-color:var(--chipfinals-border);color:var(--chipfinals-txt)}
 .result-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .result-row .matchup-label{font-size:13px;flex:1;min-width:140px}
-.result-row input[type=number]{width:52px;text-align:center;padding:5px 8px;border-radius:8px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18;font-size:14px}
-.vs-sep{font-size:12px;color:#888780}
-.empty-state{text-align:center;padding:2rem;color:#888780;font-size:14px}
+.result-row input[type=number]{width:52px;text-align:center;padding:5px 8px;border-radius:8px;border:0.5px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px}
+.vs-sep{font-size:12px;color:var(--muted)}
+.empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:14px}
 .metric-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem}
-.metric{background:#f5f5f3;border-radius:8px;padding:10px 16px;min-width:80px;text-align:center}
-.metric .mlabel{font-size:12px;color:#888780;margin-bottom:2px}
+.metric{background:var(--bg);border-radius:8px;padding:10px 16px;min-width:80px;text-align:center}
+.metric .mlabel{font-size:12px;color:var(--muted);margin-bottom:2px}
 .metric .mval{font-size:22px;font-weight:500}
-.no-games-msg{font-size:13px;color:#888780;padding:8px 0}
-.edit-row{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;border:0.5px solid #e0ddd5;margin-bottom:6px;background:#fff;flex-wrap:wrap}
-.edit-row select{font-size:13px;padding:4px 8px;border-radius:6px;border:0.5px solid #c0bdb5;background:#fff;color:#1a1a18}
+.no-games-msg{font-size:13px;color:var(--muted);padding:8px 0}
+.edit-row{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border);margin-bottom:6px;background:var(--surface);flex-wrap:wrap}
+.edit-row select{font-size:13px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--border2);background:var(--surface);color:var(--text)}
 .edit-row .edit-del{padding:4px 10px;border-radius:6px;border:0.5px solid #F0959580;background:#FCEBEB;color:#A32D2D;font-size:12px;cursor:pointer}
 .edit-row .edit-del:hover{background:#F7C1C1}
-.edit-row .edit-save{padding:4px 10px;border-radius:6px;border:0.5px solid #1D9E75;background:#E1F5EE;color:#085041;font-size:12px;cursor:pointer}
+.edit-row .edit-save{padding:4px 10px;border-radius:6px;border:0.5px solid #1D9E75;background:var(--u10bg);color:var(--u10txt);font-size:12px;cursor:pointer}
 .edit-row .edit-save:hover{background:#9FE1CB}
-h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
+h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:var(--text)}
 </style>
 </head>
 <body>
@@ -171,8 +171,9 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
 <h1 style="font-size:18px;font-weight:500;margin:0">PCYC Auburn — Junior Basketball Draw Tool</h1>
 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-  <div id="liveClock" style="font-size:13px;font-weight:500;color:#1a1a18"></div>
-  <div id="syncStatus"><span style="color:#888780;font-size:12px">⟳ Connecting...</span></div>
+  <div id="liveClock" style="font-size:13px;font-weight:500;color:var(--text)"></div>
+  <div id="syncStatus"><span style="color:var(--muted);font-size:12px">⟳ Connecting...</span></div>
+  <button id="themeToggle" onclick="toggleTheme()" style="background:var(--surface);border:0.5px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;color:var(--text);font-weight:500;white-space:nowrap">🌙 Dark</button>
 </div>
 </div>
 <div class="nav">
@@ -187,81 +188,81 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
   <div class="card">
     <div class="section-title">Draw rules</div>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Games per week</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Games per week</div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Each division plays every Friday. The number of games per week depends on team count:</p>
     <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
       <li><b>Even number of teams:</b> games = total teams ÷ 2</li>
       <li><b>Odd number of teams:</b> games = (total teams + 1) ÷ 2</li>
     </ul>
-    <p style="font-size:12px;color:#888780">Current: U10 = 2 games, U12 = 2 games, U14 = 3 games per week.</p>
+    <p style="font-size:12px;color:var(--muted)">Current: U10 = 2 games, U12 = 2 games, U14 = 3 games per week.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Courts</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Courts</div>
     <p style="font-size:13px;color:#444;line-height:1.7">There are 2 courts — Court 1 and Court 2. Both can run games at the same time slot.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">No double-booking</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">No double-booking</div>
     <p style="font-size:13px;color:#444;line-height:1.7">No team can play 2 games at the same time slot. This is a hard rule and cannot be overridden.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Fill-in team <span style="font-size:11px;color:#BA7517;background:#FAEEDA;padding:1px 7px;border-radius:20px;font-weight:400;margin-left:4px">(Fill-in)</span></div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Fill-in team <span style="font-size:11px;color:#BA7517;background:#FAEEDA;padding:1px 7px;border-radius:20px;font-weight:400;margin-left:4px">(Fill-in)</span></div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">When a division has an odd number of teams, one team per week plays an extra game as a fill-in. For example with teams A, B, C:</p>
     <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
       <li>Round robin game: A vs B</li>
       <li>C would have a bye — to keep it fair, A or B plays C as a fill-in</li>
       <li>The fill-in team's <b>extra game only</b> is labelled (Fill-in). Their round robin game has no label.</li>
     </ul>
-    <p style="font-size:12px;color:#888780">Max appearances per team per week: 2 (once in RR, once as fill-in).</p>
+    <p style="font-size:12px;color:var(--muted)">Max appearances per team per week: 2 (once in RR, once as fill-in).</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Round robin order</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Round robin order</div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Round robin games are scheduled before fill-in games each week. The tool tries to avoid repeating the same matchup 2 weeks in a row. If unavoidable due to availability, it allows it but compensates in future weeks so each team plays each other an equal number of times overall. This is a soft rule.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Scheduling priority</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Scheduling priority</div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">When multiple games compete for the same slot, the tool prioritises:</p>
     <ol style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
       <li>Most constrained matchup first (fewest shared available time slots)</li>
       <li>If equal constraint — youngest division first: U10 → U12 → U14</li>
     </ol>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Back-to-back games (no gaps)</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Back-to-back games (no gaps)</div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">All games should be scheduled consecutively with no empty slots in between. This keeps referees busy without waiting. The tool generates:</p>
     <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
       <li><b>Option 1 (preferred):</b> No gaps — all games back-to-back</li>
       <li><b>Option 2+:</b> Has a gap — flagged with ⚠️ warning. Requires your approval before saving.</li>
     </ul>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Start time</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Start time</div>
     <p style="font-size:13px;color:#444;line-height:1.7">The tool prefers to start games at <b>4:45pm or 5:30pm</b>. If no teams are available at those times, it will use <b>6:15pm or 7:00pm</b> freely — any slot is valid as long as the team is available.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Same-club scheduling <span style="font-size:11px;color:#A32D2D;font-weight:400;background:#FCEBEB;padding:1px 7px;border-radius:20px;margin-left:4px">Hard rule (except GSA)</span></div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Same-club scheduling <span style="font-size:11px;color:#A32D2D;font-weight:400;background:#FCEBEB;padding:1px 7px;border-radius:20px;margin-left:4px">Hard rule (except GSA)</span></div>
     <p style="font-size:13px;color:#444;line-height:1.7;margin-bottom:4px">Teams from the same club (e.g. Silverfang U10, Silverfang U12) must never be scheduled at the same time slot on different courts — a coach cannot be in two places at once.</p>
     <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px;margin-bottom:4px">
       <li><b>No same-time clash:</b> Hard rule — the tool will never place two same-club games at the same time. If it cannot avoid it (no other slot works), it flags a conflict for you to fix manually.</li>
       <li><b>Games in a row:</b> Soft rule — same-club games are scheduled consecutively where possible so the coach doesn't wait. A gap is flagged with ℹ️ if unavoidable.</li>
     </ul>
-    <p style="font-size:12px;color:#888780">GSA is exempt from both rules (they have multiple coaches). Club names are detected from the team name pattern: <i>Age Group → Club → Team Name</i>.</p>
+    <p style="font-size:12px;color:var(--muted)">GSA is exempt from both rules (they have multiple coaches). Club names are detected from the team name pattern: <i>Age Group → Club → Team Name</i>.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Options shown</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Options shown</div>
     <p style="font-size:13px;color:#444;line-height:1.7">The tool always generates multiple draw options for you to choose from. If all options have issues, all are shown with conflicts explained so you can pick the best one and fix it manually in Season Tracker.</p>
   </div>
 
   <div class="card">
     <div class="section-title">Season rules</div>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:4px 0 6px">Season dates</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:4px 0 6px">Season dates</div>
     <p style="font-size:13px;color:#444;line-height:1.7">Season runs <b>1 May 2026 – 14 August 2026</b>, every Friday. No games on <b>17 July</b> and <b>24 July</b> (winter school holidays).</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Regular rounds</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Regular rounds</div>
     <p style="font-size:13px;color:#444;line-height:1.7">Weeks 1–12 are regular rounds.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Week 13 — Semi finals</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Week 13 — Semi finals</div>
     <ul style="font-size:13px;color:#444;line-height:1.9;padding-left:20px">
       <li><b>3 teams or less:</b> No semi finals. Top 2 go straight to grand final in week 14.</li>
       <li><b>4 teams or more:</b> Top 4 play semi finals (1st vs 4th, 2nd vs 3rd).</li>
       <li>Teams that don't make semis still play a makeup game.</li>
     </ul>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Week 14 — Grand finals</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Week 14 — Grand finals</div>
     <p style="font-size:13px;color:#444;line-height:1.7">All divisions play their grand final. Teams that don't make the final play a makeup game.</p>
 
-    <div style="font-size:13px;font-weight:500;color:#1a1a18;margin:16px 0 6px">Finals game ordering</div>
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin:16px 0 6px">Finals game ordering</div>
     <p style="font-size:13px;color:#444;line-height:1.7">In weeks 13 and 14, if a team plays both a finals game and a makeup game, the <b>finals game is scheduled first</b> (earlier slot). This lets players put their best effort into the important game while fresh. The makeup game goes second. If this isn't possible due to availability, it's flagged.</p>
   </div>
 </div>
@@ -311,7 +312,7 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:#1a1a18}
   </div>
   <div class="card" style="margin-top:1rem">
     <div class="section-title">Data recovery</div>
-    <p style="font-size:13px;color:#888780;margin-bottom:10px">If your ticks or draws are missing, click below to scan all saved data in this browser and recover it.</p>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">If your ticks or draws are missing, click below to scan all saved data in this browser and recover it.</p>
     <div class="btn-row">
       <button class="btn" onclick="scanAllData()">Scan browser data</button>
       <button class="btn primary" onclick="forceLoadFirebase()">Load from cloud</button>
@@ -467,9 +468,9 @@ async function loadFromFirebase(){
 function showSyncStatus(status){
   const el=document.getElementById('syncStatus');
   if(!el) return;
-  if(status==='loading') el.innerHTML='<span style="color:#888780;font-size:12px">⟳ Syncing...</span>';
+  if(status==='loading') el.innerHTML='<span style="color:var(--muted);font-size:12px">⟳ Syncing...</span>';
   else if(status==='synced') el.innerHTML='<span style="color:#085041;font-size:12px">✓ Synced</span>';
-  else if(status==='saving') el.innerHTML='<span style="color:#888780;font-size:12px">⟳ Saving...</span>';
+  else if(status==='saving') el.innerHTML='<span style="color:var(--muted);font-size:12px">⟳ Saving...</span>';
   else if(status==='offline') el.innerHTML='<span style="color:#BA7517;font-size:12px">⚠️ Offline — saved locally</span>';
 }
 
@@ -1252,7 +1253,7 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
   } else {
     html+='<span style="font-size:13px;font-weight:500;color:#085041">'+attempts.length+' valid options — Week '+w+' &nbsp;</span>';
   }
-  html+='<span style="font-size:12px;color:#888780">'+weekDate+'</span></div>';
+  html+='<span style="font-size:12px;color:var(--muted)">'+weekDate+'</span></div>';
   const optionNote=hasConflicts
     ?'All options have issues. Pick the best one and edit manually after.'
     :attempts.length===1
@@ -1260,7 +1261,7 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
       :attempts.length<3
         ?'Only '+attempts.length+' distinct options found with this availability — the Free Flow gap cannot be avoided this week.'
         :'Multiple valid draws found. Pick the one you prefer.';
-  html+='<p style="font-size:13px;color:#888780;margin-bottom:1rem">'+optionNote+'</p>';
+  html+='<p style="font-size:13px;color:var(--muted);margin-bottom:1rem">'+optionNote+'</p>';
 
   attempts.forEach((att,i)=>{
     const optNum=i+1;
@@ -1282,15 +1283,15 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
       const usedSlots=[...new Set(att.scheduled.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
       html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
       html+='<thead><tr>';
-      html+='<th style="padding:5px 8px;text-align:left;color:#888780;border-bottom:0.5px solid #e0ddd5;min-width:110px">Time</th>';
-      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #e0ddd5;color:#085041">Court 1</th>';
-      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #e0ddd5;color:#0C447C">Court 2</th>';
+      html+='<th style="padding:5px 8px;text-align:left;color:var(--muted);border-bottom:0.5px solid var(--border);min-width:110px">Time</th>';
+      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--border);color:#085041">Court 1</th>';
+      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--border);color:#0C447C">Court 2</th>';
       html+='</tr></thead><tbody>';
       usedSlots.forEach(slot=>{
         const c1=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 1');
         const c2=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 2');
-        html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
-        html+='<td style="padding:5px 8px;color:#888780;font-size:11px;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
+        html+='<tr style="border-bottom:0.5px solid var(--border)">';
+        html+='<td style="padding:5px 8px;color:var(--muted);font-size:11px;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
         [c1,c2].forEach(g=>{
           if(g){
             const t1l=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-size:10px">(Fill-in)</span>':'');
@@ -1308,7 +1309,7 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
 
       // Logic explanation per option
       html+='<div style="margin-top:8px;border-top:0.5px solid #e0ddd5;padding-top:8px">';
-      html+='<div style="font-size:11px;font-weight:500;color:#888780;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Why this option</div>';
+      html+='<div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Why this option</div>';
       ['U10','U12','U14'].forEach(div=>{
         const divGames=att.scheduled.filter(g=>g.div===div);
         if(!divGames.length)return;
@@ -1330,12 +1331,12 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
       }
       if(att.warnings&&att.warnings.filter(w=>w.type==='club_gap').length){
         att.warnings.filter(w=>w.type==='club_gap').forEach(warn=>{
-          html+='<div style="font-size:12px;color:#888780;margin-top:2px">ℹ️ '+warn.msg+'</div>';
+          html+='<div style="font-size:12px;color:var(--muted);margin-top:2px">ℹ️ '+warn.msg+'</div>';
         });
       }
       if(att.warnings&&att.warnings.filter(w=>w.type==='late_start').length){
         att.warnings.filter(w=>w.type==='late_start').forEach(warn=>{
-          html+='<div style="font-size:12px;color:#888780;margin-top:2px">⚠️ '+warn.msg+'</div>';
+          html+='<div style="font-size:12px;color:var(--muted);margin-top:2px">⚠️ '+warn.msg+'</div>';
         });
       }
       html+='</div>';
@@ -1483,12 +1484,12 @@ function renderDrawOutput(games,warnings,w,isFinals){
 
   let html='<div class="card">';
   html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
-  html+='<div class="section-title" style="margin:0">Draw — week '+w+(isFinals?' (finals)':'')+' &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:#888780;font-size:12px">'+weekDate+'</span></div>';
+  html+='<div class="section-title" style="margin:0">Draw — week '+w+(isFinals?' (finals)':'')+' &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px">'+weekDate+'</span></div>';
   html+='<button class="btn" onclick="printDraw('+w+')" style="font-size:13px;padding:6px 14px">Print / Save PDF</button>';
   html+='</div>';
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
   html+='<thead><tr>';
-  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:#888780;border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
   html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#f0f9f5;color:#085041">Court 1</th>';
   html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#EBF3FC;color:#0C447C">Court 2</th>';
   html+='</tr></thead><tbody>';
@@ -1496,18 +1497,18 @@ function renderDrawOutput(games,warnings,w,isFinals){
   usedSlots.forEach(slot=>{
     const c1=games.find(g=>g.slot===slot&&g.court==='Court 1');
     const c2=games.find(g=>g.slot===slot&&g.court==='Court 2');
-    html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
-    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:#888780;white-space:nowrap">'+SLOT_LABELS[slot]+'</td>';
+    html+='<tr style="border-bottom:0.5px solid var(--border)">';
+    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap">'+SLOT_LABELS[slot]+'</td>';
     [c1,c2].forEach((g,ci)=>{
       const bg=ci===0?'#f9fef9':'#f7fbff';
       if(g){
         html+='<td style="padding:10px 12px;background:'+bg+'">';
         const t1Label=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
         const t2Label=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
-        html+='<div style="font-weight:500;font-size:13px">'+t1Label+' <span style="color:#888780;font-weight:400">vs</span> '+t2Label+'</div>';
+        html+='<div style="font-weight:500;font-size:13px">'+t1Label+' <span style="color:var(--muted);font-weight:400">vs</span> '+t2Label+'</div>';
         html+='<div style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
         html+='<span class="div-badge '+DIV_COLORS[g.div]+'">'+g.div+'</span>';
-        if(g.label)html+='<span style="font-size:11px;color:#888780">'+g.label+'</span>';
+        if(g.label)html+='<span style="font-size:11px;color:var(--muted)">'+g.label+'</span>';
         html+='</div>';
         html+='</td>';
       } else {
@@ -1550,7 +1551,7 @@ function printDraw(w){
     }
     rows+='<tr><td style="padding:10px 14px;border:1px solid #ddd;font-weight:500;white-space:nowrap;color:#555">'+SLOT_LABELS[slot]+'</td>'+cell(c1)+cell(c2)+'</tr>';
   });
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Draw Week '+w+'</title><style>body{font-family:system-ui,sans-serif;padding:2rem;color:#1a1a18}h2{margin-bottom:4px}p{color:#888;margin-bottom:1.5rem;font-size:14px}table{width:100%;border-collapse:collapse;font-size:14px}th{padding:10px 14px;background:#f5f5f3;border:1px solid #ddd;text-align:left}@media print{button{display:none}}</style></head><body><h2>PCYC Auburn — Junior Basketball Draw</h2><p>Week '+w+' &nbsp;|&nbsp; '+weekDate+'</p><table><thead><tr><th>Time</th><th>Court 1</th><th>Court 2</th></tr></thead><tbody>'+rows+'</tbody></table><br><button onclick="window.print()">Print</button></body></html>';
+  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Draw Week '+w+'</title><style>body{font-family:system-ui,sans-serif;padding:2rem;color:var(--text)}h2{margin-bottom:4px}p{color:#888;margin-bottom:1.5rem;font-size:14px}table{width:100%;border-collapse:collapse;font-size:14px}th{padding:10px 14px;background:var(--bg);border:1px solid #ddd;text-align:left}@media print{button{display:none}}</style></head><body><h2>PCYC Auburn — Junior Basketball Draw</h2><p>Week '+w+' &nbsp;|&nbsp; '+weekDate+'</p><table><thead><tr><th>Time</th><th>Court 1</th><th>Court 2</th></tr></thead><tbody>'+rows+'</tbody></table><br><button onclick="window.print()">Print</button></body></html>';
   const win=window.open('','_blank');
   win.document.write(html);
   win.document.close();
@@ -1695,15 +1696,15 @@ function renderWeekDetailBody(w,body){
 
   let html='<div style="overflow-x:auto;margin-bottom:1rem"><table style="width:100%;border-collapse:collapse;font-size:13px">';
   html+='<thead><tr>';
-  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:#888780;border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
+  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
   html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#f0f9f5;color:#085041">Court 1</th>';
   html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#EBF3FC;color:#0C447C">Court 2</th>';
   html+='</tr></thead><tbody>';
   usedSlots.forEach(slot=>{
     const c1=draw.find(g=>g.slot===slot&&g.court==='Court 1');
     const c2=draw.find(g=>g.slot===slot&&g.court==='Court 2');
-    html+='<tr style="border-bottom:0.5px solid #e0ddd5">';
-    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:#888780;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
+    html+='<tr style="border-bottom:0.5px solid var(--border)">';
+    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
     [c1,c2].forEach((g,ci)=>{
       const bg=ci===0?'#f9fef9':'#f7fbff';
       if(g){
@@ -1711,7 +1712,7 @@ function renderWeekDetailBody(w,body){
         html+='<td style="padding:10px 12px;background:'+bg+'">';
         const t1d=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
         const t2d=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
-        html+='<div style="font-weight:500;font-size:13px">'+t1d+' <span style="color:#888780;font-weight:400">vs</span> '+t2d+'</div>';
+        html+='<div style="font-weight:500;font-size:13px">'+t1d+' <span style="color:var(--muted);font-weight:400">vs</span> '+t2d+'</div>';
         html+='<div style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
         html+='<span class="div-badge '+DIV_COLORS[g.div]+'">'+g.div+'</span>';
         html+='</div>';
@@ -1750,10 +1751,10 @@ function startEditGame(w,idx){
 
   const form='<div class="card" style="margin-top:1rem"><div class="section-title">Edit game</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 1</div><select id="eg_t1" style="width:100%">'+teamOpts(g.t1)+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 2</div><select id="eg_t2" style="width:100%">'+teamOpts(g.t2)+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Time slot</div><select id="eg_slot" style="width:100%">'+slotOpts(g.slot)+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Court</div><select id="eg_court" style="width:100%">'+courtOpts(g.court)+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Team 1</div><select id="eg_t1" style="width:100%">'+teamOpts(g.t1)+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Team 2</div><select id="eg_t2" style="width:100%">'+teamOpts(g.t2)+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Time slot</div><select id="eg_slot" style="width:100%">'+slotOpts(g.slot)+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Court</div><select id="eg_court" style="width:100%">'+courtOpts(g.court)+'</select></div>'+
     '</div>'+
     '<div class="btn-row">'+
     '<button class="btn primary" onclick="saveEditGame('+w+','+idx+')">Save</button>'+
@@ -1791,10 +1792,10 @@ function startAddGame(w){
   function courtOpts(){return COURTS.map(c=>'<option value="'+c+'">'+c+'</option>').join('');}
   const form='<div class="card" style="margin-top:1rem"><div class="section-title">Add game</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 1</div><select id="ag_t1" style="width:100%">'+teamOpts()+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Team 2</div><select id="ag_t2" style="width:100%">'+teamOpts()+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Time slot</div><select id="ag_slot" style="width:100%">'+slotOpts()+'</select></div>'+
-    '<div><div style="font-size:12px;color:#888780;margin-bottom:4px">Court</div><select id="ag_court" style="width:100%">'+courtOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Team 1</div><select id="ag_t1" style="width:100%">'+teamOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Team 2</div><select id="ag_t2" style="width:100%">'+teamOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Time slot</div><select id="ag_slot" style="width:100%">'+slotOpts()+'</select></div>'+
+    '<div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Court</div><select id="ag_court" style="width:100%">'+courtOpts()+'</select></div>'+
     '</div>'+
     '<div class="btn-row">'+
     '<button class="btn primary" onclick="saveAddGame('+w+')">Add</button>'+
@@ -1820,7 +1821,7 @@ function saveAddGame(w){
 function forceLoadFirebase(){
   const out=document.getElementById('recoveryOutput');
   if(!window._fbLoad){out.innerHTML='<span style="color:#A32D2D">Firebase not connected.</span>';return;}
-  out.innerHTML='<span style="color:#888780">⟳ Loading from cloud...</span>';
+  out.innerHTML='<span style="color:var(--muted)">⟳ Loading from cloud...</span>';
   window._fbLoad().then(data=>{
     if(!data){out.innerHTML='<span style="color:#A32D2D">No data found in cloud.</span>';return;}
     const availCount=Object.values(data.avail||{}).filter(v=>v===true).length;
@@ -1883,7 +1884,7 @@ function scanAllData(){
     }catch(e){html+='<div style="color:#A32D2D;margin:4px 0">'+key+' — corrupt data, skipping</div>';return;}
     const availCount=Object.values(data.avail||{}).filter(v=>v===true).length;
     const drawWeeks=Object.keys(data.draws||{}).length;
-    html+=`<div style="margin:6px 0;padding:8px;background:#f5f5f3;border-radius:6px">
+    html+=`<div style="margin:6px 0;padding:8px;background:var(--bg);border-radius:6px">
       <b>${key}</b> — ${availCount} ticks saved, ${drawWeeks} weeks with draws
       <button class="btn" style="font-size:11px;padding:3px 10px;margin-left:8px" onclick="restoreFrom('${key}')">Restore this</button>
     </div>`;
@@ -2073,6 +2074,25 @@ recalcFillInHistory();
 localStorage.setItem('pcyc_v8', JSON.stringify(db));
 if(window._fbSave) window._fbSave(db);
 populateWeekSelects();
+
+// Theme toggle
+function toggleTheme(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const newTheme=isDark?'light':'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('pcyc_theme', newTheme);
+  const btn=document.getElementById('themeToggle');
+  if(btn) btn.textContent=isDark?'🌙 Dark':'☀️ Light';
+}
+// Load saved theme
+(function(){
+  const saved=localStorage.getItem('pcyc_theme')||'light';
+  if(saved==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    const btn=document.getElementById('themeToggle');
+    if(btn) btn.textContent='☀️ Light';
+  }
+})();
 renderAvailTable();
 </script>
 </body>

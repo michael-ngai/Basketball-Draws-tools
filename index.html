@@ -284,6 +284,18 @@ h1{font-size:20px;font-weight:500;margin-bottom:1.5rem;color:var(--text)}
     </div>
   </div>
   <div id="drawOutput" class="draw-output"></div>
+<div id="aiFeedbackPanel" style="display:none;margin-top:1rem">
+  <div class="card">
+    <div class="section-title">💬 Draw Feedback — Teach the Tool</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Tell the tool what's wrong with this draw, or what you would have done differently. It will learn and regenerate.</p>
+    <div id="feedbackHistory" style="max-height:200px;overflow-y:auto;margin-bottom:10px;font-size:13px"></div>
+    <div style="display:flex;gap:8px">
+      <textarea id="feedbackInput" placeholder="e.g. Free Flow should not have a gap between games this week. Stingers shouldn't be fill-in again so soon..." style="flex:1;padding:8px 12px;border-radius:8px;border:0.5px solid var(--border2);background:var(--input-bg);color:var(--text);font-size:13px;resize:vertical;min-height:60px;font-family:inherit"></textarea>
+      <button class="btn primary" onclick="submitFeedback()" style="align-self:flex-end;white-space:nowrap">Send ↑</button>
+    </div>
+    <div id="feedbackStatus" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+  </div>
+</div>
 </div>
 
 <div id="page-results" class="page">
@@ -695,7 +707,15 @@ function getLastWeekMatchups(w){
   return db.draws[w-1].map(g=>[g.t1,g.t2]);
 }
 
-function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
+// ============================================================
+// RULE HIERARCHY (rebuilt clean):
+// HARD-1: Same division only
+// HARD-2: No team double-booking (team name level, NOT club level)
+// HARD-3: U10 fill-in rotation locked first
+// NEAR-HARD: No Silverfang coach clash, No Free Flow coach clash
+// PREFERRED: Silverfang back-to-back, U12/U14 fill-in rotation, Free Flow back-to-back
+// ============================================================
+function tryBuildDraw(w, rrSnapshot, seed=0, allowCoachClash=false){
   const scheduled=[];
   const issues=[];
   const warnings=[];
@@ -802,7 +822,7 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowGap=false){
     }
 
     // Pass D: gap mode — any slot even if creates a gap, still respect coach clash
-    if(allowGap){
+    if(allowCoachClash){
       for(const s of orderedSlots){
         if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) continue;
         if(wouldCoachClash(s,t1,t2,[])) continue;
@@ -1104,7 +1124,7 @@ function generateDraw(){
     const att=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,false);
     if(att.issues.length===0) allAttempts.push(att);
     else conflictAttempts.push(att);
-    const attG=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true);
+    const attG=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,true); // allow coach clash as last resort
     if(attG.issues.length===0) allAttempts.push(attG);
     else conflictAttempts.push(attG);
   }
@@ -1229,12 +1249,14 @@ function generateDraw(){
     renderDrawOutput(chosen.scheduled,chosen.warnings,w);
     showDebug([chosen]);
     renderSeasonGrid();
+    showFeedbackPanel();
     return;
   }
 
   // Add note explaining why options are limited if fewer than 3
   renderConflictOptions(w,finalOptions,rrSnapshot,false);
   showDebug(finalOptions);
+  showFeedbackPanel();
   }catch(err){
     const out=document.getElementById('drawOutput');
     if(out)out.innerHTML='<div class="card"><div style="color:#A32D2D;font-size:13px;font-family:monospace"><b>Draw error:</b> '+err.message+'</div></div>';
@@ -2074,6 +2096,120 @@ recalcFillInHistory();
 localStorage.setItem('pcyc_v8', JSON.stringify(db));
 if(window._fbSave) window._fbSave(db);
 populateWeekSelects();
+
+// ============================================================
+// AI FEEDBACK SYSTEM
+// ============================================================
+function showFeedbackPanel(){
+  const panel=document.getElementById('aiFeedbackPanel');
+  if(panel) panel.style.display='block';
+  renderFeedbackHistory();
+}
+
+function renderFeedbackHistory(){
+  const box=document.getElementById('feedbackHistory');
+  if(!box) return;
+  const rules=db.learnedRules||[];
+  if(!rules.length){box.innerHTML='<p style="color:var(--muted);font-size:12px">No feedback yet. Generate a draw and tell me what to improve.</p>';return;}
+  box.innerHTML=rules.slice(-10).map((r,i)=>`
+    <div style="padding:6px 10px;border-radius:6px;background:var(--divbg);margin-bottom:6px;border:0.5px solid var(--border)">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${r.date} — Week ${r.week}</div>
+      <div style="font-size:13px;color:var(--text)">${r.feedback}</div>
+      ${r.rule?`<div style="font-size:12px;color:#1D9E75;margin-top:4px">📌 Learned: ${r.rule}</div>`:''}
+    </div>
+  `).join('');
+}
+
+async function submitFeedback(){
+  const input=document.getElementById('feedbackInput');
+  const status=document.getElementById('feedbackStatus');
+  const feedback=input.value.trim();
+  if(!feedback){status.textContent='Please type some feedback first.';return;}
+
+  status.textContent='🤔 Thinking...';
+  input.disabled=true;
+
+  // Get current draw context
+  const currentDraw=db.draws[currentWeek]||[];
+  const drawSummary=currentDraw.map(g=>`${g.slot} Court ${g.court.replace('Court ','')}: ${g.t1} vs ${g.t2}${g.isFillInGame?' (Fill-in)':''}`).join('\n');
+  const rules=db.learnedRules||[];
+  const rulesSummary=rules.slice(-5).map(r=>r.rule).filter(Boolean).join('\n');
+
+  const systemPrompt=`You are a basketball draw scheduling assistant for PCYC Auburn Junior Basketball. 
+You help improve weekly draws based on coordinator feedback.
+
+CURRENT RULES HIERARCHY:
+HARD (never break):
+1. Same division only
+2. No team double-booking (by team name, not club - GSA PG Boys and GSA City Boys CAN play same slot)
+3. U10 fill-in rotation: strictly every 3rd week, never same team twice in a row
+
+NEAR-HARD (avoid, flag if broken):
+4. Silverfang coach clash: U10/U12/U14 Silverfang cannot play same slot (one coach)
+5. Free Flow coach clash: U10/U12 Free Flow cannot play same slot (one coach)
+
+PREFERRED (sacrifice if needed, explain why):
+6. Silverfang back-to-back: consecutive slots, no gap
+7. U12/U14 fill-in rotation: follow order when possible
+8. Free Flow back-to-back: preferred, ok to sacrifice
+
+PREVIOUSLY LEARNED RULES:
+${rulesSummary||'None yet'}
+
+The coordinator will give you feedback about the current draw. Your job is to:
+1. Acknowledge what's wrong in plain English
+2. Extract a clear, concise rule to remember (max 1-2 sentences)
+3. Suggest what the corrected draw should look like if possible
+
+Respond in JSON only:
+{"acknowledgement": "...", "learned_rule": "...", "suggestion": "..."}`;
+
+  const userMsg=`Current draw for Week ${currentWeek}:
+${drawSummary}
+
+Coordinator feedback: ${feedback}`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:600,
+        system:systemPrompt,
+        messages:[{role:'user',content:userMsg}]
+      })
+    });
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||'{}';
+    let parsed={};
+    try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch(e){parsed={acknowledgement:text,learned_rule:'',suggestion:''};}
+
+    // Save to learnedRules
+    if(!db.learnedRules) db.learnedRules=[];
+    db.learnedRules.push({
+      date:new Date().toLocaleDateString('en-AU'),
+      week:currentWeek,
+      feedback,
+      rule:parsed.learned_rule||'',
+      acknowledgement:parsed.acknowledgement||'',
+      suggestion:parsed.suggestion||''
+    });
+    saveDB(db);
+
+    // Show response
+    status.innerHTML=`<div style="background:var(--divbg);border-radius:8px;padding:10px;border:0.5px solid var(--border);margin-top:6px">
+      <div style="color:var(--text);margin-bottom:6px">${parsed.acknowledgement||''}</div>
+      ${parsed.learned_rule?`<div style="color:#1D9E75;font-size:12px">📌 Saved rule: ${parsed.learned_rule}</div>`:''}
+      ${parsed.suggestion?`<div style="color:var(--muted);font-size:12px;margin-top:6px">💡 Suggestion: ${parsed.suggestion}</div>`:''}
+    </div>`;
+    input.value='';
+    renderFeedbackHistory();
+  }catch(e){
+    status.textContent='Error: '+e.message;
+  }
+  input.disabled=false;
+}
 
 // Theme toggle
 function toggleTheme(){

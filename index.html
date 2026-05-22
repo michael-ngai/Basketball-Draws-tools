@@ -779,62 +779,93 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowCoachClash=false){
     return false;
   }
 
-  function pickSlot(avail, t1, t2, pendingMatchups=[]){
+  function pickSlot(avail, t1, t2, pendingMatchups=[], div=''){
     const usedSlotNames=[...new Set(Object.keys(usedSlots).map(k=>k.split('|')[0]))];
     const preferredStarts=['4:45pm','5:30pm'];
     const orderedSlots=VISIBLE_SLOTS.filter(s=>avail.includes(s));
 
-    // Fix 1: back-to-back means no EMPTY slots between first and last game
-    // A slot with 1 game on 1 court is fine — both courts don't need to be filled
-    // So we prefer partial slots (fill them up) but never BLOCK on needing to fill both courts
+    // U10 same-court rule: all U10 games should stay on the same court
+    const u10Court=div==='U10'?(scheduled.find(g=>g.div==='U10')?.court||null):null;
+    function getCourts(){
+      if(u10Court){
+        const other=u10Court==='Court 1'?'Court 2':'Court 1';
+        return [u10Court,other]; // prefer same court, fall back to other
+      }
+      return courtOrder;
+    }
 
-    function trySlot(s){
+    function trySlot(s, strict=false){
       if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) return null;
-      // Fix 2+3: hard coach clash check against scheduled AND pending
       if(wouldCoachClash(s,t1,t2,pendingMatchups)) return null;
-      for(const c of courtOrder){
-        if(isFree(s,c)) return {slot:s, court:c, hasGap:false};
+      const courts=getCourts();
+      // strict = U10 same court only, no fallback to other court
+      const tryCourts=strict&&u10Court?[u10Court]:courts;
+      for(const c of tryCourts){
+        if(isFree(s,c)) return {slot:s,court:c,hasGap:false};
       }
       return null;
     }
 
-    // Pass A: partial slots first (back-to-back preference), no coach clash
+    // Pass A: partial slots first — U10 strict same court
     for(const s of orderedSlots){
       if(!usedSlotNames.includes(s)) continue;
-      const r=trySlot(s);
+      const r=trySlot(s, div==='U10');
       if(r) return r;
     }
+    // Pass A2: partial slots — U10 allow other court as fallback
+    if(div==='U10'){
+      for(const s of orderedSlots){
+        if(!usedSlotNames.includes(s)) continue;
+        const r=trySlot(s, false);
+        if(r) return r;
+      }
+    }
 
-    // Pass B: new slots — preferred starts first
+    // Pass B: new slots — preferred starts
     for(const s of orderedSlots){
       if(usedSlotNames.includes(s)) continue;
       if(!preferredStarts.includes(s)) continue;
-      const r=trySlot(s);
+      const r=trySlot(s, div==='U10');
       if(r) return r;
+    }
+    if(div==='U10'){
+      for(const s of orderedSlots){
+        if(usedSlotNames.includes(s)) continue;
+        if(!preferredStarts.includes(s)) continue;
+        const r=trySlot(s, false);
+        if(r) return r;
+      }
     }
 
     // Pass C: new slots — later times
     for(const s of orderedSlots){
       if(usedSlotNames.includes(s)) continue;
       if(preferredStarts.includes(s)) continue;
-      const r=trySlot(s);
+      const r=trySlot(s, div==='U10');
       if(r) return r;
     }
+    if(div==='U10'){
+      for(const s of orderedSlots){
+        if(usedSlotNames.includes(s)) continue;
+        if(preferredStarts.includes(s)) continue;
+        const r=trySlot(s, false);
+        if(r) return r;
+      }
+    }
 
-    // Pass D: gap mode — any slot even if creates a gap, still respect coach clash
+    // Pass D: last resort — allow coach clash
     if(allowCoachClash){
       for(const s of orderedSlots){
         if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) continue;
         if(wouldCoachClash(s,t1,t2,[])) continue;
-        for(const c of courtOrder){
-          if(isFree(s,c)) return {slot:s, court:c, hasGap:true};
+        for(const c of getCourts()){
+          if(isFree(s,c)) return {slot:s,court:c,hasGap:true};
         }
       }
-      // Last resort: allow coach clash too
       for(const s of orderedSlots){
         if(!teamFreeAt(t1,s)||!teamFreeAt(t2,s)) continue;
-        for(const c of courtOrder){
-          if(isFree(s,c)) return {slot:s, court:c, hasGap:true};
+        for(const c of getCourts()){
+          if(isFree(s,c)) return {slot:s,court:c,hasGap:true};
         }
       }
     }
@@ -861,7 +892,7 @@ function tryBuildDraw(w, rrSnapshot, seed=0, allowCoachClash=false){
       issues.push({type:'no_avail',msg:'No shared availability: '+shortName(t1)+' vs '+shortName(t2)+' ('+div+')',div});
       return false;
     }
-    const picked=pickSlot(avail,t1,t2,pendingMatchups);
+    const picked=pickSlot(avail,t1,t2,pendingMatchups,div);
     if(!picked){
       const clashSlots=avail.filter(s=>!teamFreeAt(t1,s)||!teamFreeAt(t2,s));
       const courtFull=avail.filter(s=>teamFreeAt(t1,s)&&teamFreeAt(t2,s)&&!COURTS.some(c=>isFree(s,c)));
@@ -1316,29 +1347,30 @@ function renderConflictOptions(w,attempts,rrSnapshot,hasConflicts=true){
 
     if(att.scheduled.length){
       const usedSlots=[...new Set(att.scheduled.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
-      html+='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px">';
-      html+='<thead><tr>';
-      html+='<th style="padding:5px 8px;text-align:left;color:var(--muted);border-bottom:0.5px solid var(--border);min-width:110px">Time</th>';
-      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--border);color:#085041">Court 1</th>';
-      html+='<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid var(--border);color:#0C447C">Court 2</th>';
+      const divC={U10:{badgeBg:'#d4f5e9',badge:'#085041',border:'#1D9E75',row:'rgba(29,158,117,0.07)'},U12:{badgeBg:'#dceeff',badge:'#0C447C',border:'#2979c8',row:'rgba(12,68,124,0.06)'},U14:{badgeBg:'#fdebc8',badge:'#633806',border:'#EF9F27',row:'rgba(99,56,6,0.06)'}};
+      function optCell(g){
+        if(!g) return '<td style="padding:10px 12px;color:var(--border2);font-size:14px">—</td>';
+        const dc=divC[g.div]||{row:'',badge:'#444',badgeBg:'#eee',border:'#ccc'};
+        const fiTeam=g.fillInTeam&&g.fillInTeam[0];
+        function tn(t){
+          const n=t.replace(/ U10| U12| U14/,'');
+          return fiTeam===t
+            ?'<b>'+n+'</b> <span style="background:'+dc.badgeBg+';color:'+dc.badge+';font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px">FILL-IN</span>'
+            :'<span style="font-weight:600">'+n+'</span>';
+        }
+        return '<td style="padding:10px 12px;background:'+dc.row+';border-left:3px solid '+dc.border+'"><span style="background:'+dc.badgeBg+';color:'+dc.badge+';font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;margin-right:6px">'+g.div+'</span><span style="font-size:13px">'+tn(g.t1)+' <span style="color:var(--muted);font-weight:400">vs</span> '+tn(g.t2)+'</span></td>';
+      }
+      html+='<table style="width:100%;border-collapse:collapse;margin-bottom:8px;border-radius:8px;overflow:hidden">';
+      html+='<thead><tr style="background:var(--divbg)">';
+      html+='<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.06em;border-bottom:0.5px solid var(--border);width:120px">TIME</th>';
+      html+='<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;color:#085041;letter-spacing:.06em;border-bottom:0.5px solid var(--border)">🏀 COURT 1</th>';
+      html+='<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:600;color:#0C447C;letter-spacing:.06em;border-bottom:0.5px solid var(--border)">🏀 COURT 2</th>';
       html+='</tr></thead><tbody>';
-      usedSlots.forEach(slot=>{
+      usedSlots.forEach((slot,si)=>{
         const c1=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 1');
         const c2=att.scheduled.find(g=>g.slot===slot&&g.court==='Court 2');
-        html+='<tr style="border-bottom:0.5px solid var(--border)">';
-        html+='<td style="padding:5px 8px;color:var(--muted);font-size:11px;white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>';
-        [c1,c2].forEach(g=>{
-          if(g){
-            const t1l=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-size:10px">(Fill-in)</span>':'');
-            const t2l=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-size:10px">(Fill-in)</span>':'');
-            html+='<td style="padding:5px 8px"><span style="font-weight:500">'+t1l+' vs '+t2l+'</span>';
-            html+=' <span class="div-badge '+DIV_COLORS[g.div]+'" style="font-size:10px">'+g.div+'</span>';
-            html+='</td>';
-          } else {
-            html+='<td style="padding:5px 8px;color:#c0bdb5">—</td>';
-          }
-        });
-        html+='</tr>';
+        const isLast=si===usedSlots.length-1;
+        html+='<tr style="border-bottom:'+(isLast?'none':'0.5px solid var(--border)')+'"><td style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap">'+(SLOT_LABELS[slot]||slot)+'</td>'+optCell(c1)+optCell(c2)+'</tr>';
       });
       html+='</tbody></table>';
 
@@ -1517,54 +1549,80 @@ function renderDrawOutput(games,warnings,w,isFinals){
   const usedSlots=[...new Set(games.map(g=>g.slot))].sort((a,b)=>VISIBLE_SLOTS.indexOf(a)-VISIBLE_SLOTS.indexOf(b));
   const weekDate=fmtDate(getWeekDate(w));
 
-  let html='<div class="card">';
-  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
-  html+='<div class="section-title" style="margin:0">Draw — week '+w+(isFinals?' (finals)':'')+' &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px">'+weekDate+'</span></div>';
-  html+='<button class="btn" onclick="printDraw('+w+')" style="font-size:13px;padding:6px 14px">Print / Save PDF</button>';
-  html+='</div>';
-  html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
-  html+='<thead><tr>';
-  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;color:var(--muted);border-bottom:1px solid #e0ddd5;min-width:130px">Time</th>';
-  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#f0f9f5;color:#085041">Court 1</th>';
-  html+='<th style="padding:8px 12px;text-align:left;font-weight:500;border-bottom:1px solid #e0ddd5;background:#EBF3FC;color:#0C447C">Court 2</th>';
-  html+='</tr></thead><tbody>';
+  // Division color scheme
+  const divColors={
+    U10:{row:'rgba(29,158,117,0.07)',badge:'#085041',badgeBg:'#d4f5e9',border:'#1D9E75',label:'U10'},
+    U12:{row:'rgba(12,68,124,0.06)',badge:'#0C447C',badgeBg:'#dceeff',border:'#2979c8',label:'U12'},
+    U14:{row:'rgba(99,56,6,0.06)',badge:'#633806',badgeBg:'#fdebc8',border:'#EF9F27',label:'U14'},
+  };
 
-  usedSlots.forEach(slot=>{
+  function gameCell(g){
+    if(!g) return '<td style="padding:14px 16px;color:var(--border2);font-size:16px;vertical-align:middle">—</td>';
+    const dc=divColors[g.div]||{row:'',badge:'#444',badgeBg:'#eee',border:'#ccc'};
+    const isFI=g.fillInTeam&&g.fillInTeam.length>0;
+    const fiTeam=isFI?g.fillInTeam[0]:null;
+
+    function teamName(t){
+      // Short: strip division suffix
+      const name=t.replace(/ U10| U12| U14/,'');
+      const fi=fiTeam===t;
+      return fi
+        ?`<span style="font-weight:700;color:var(--text)">${name}</span> <span style="background:${dc.badgeBg};color:${dc.badge};font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;vertical-align:middle">FILL-IN</span>`
+        :`<span style="font-weight:600;color:var(--text)">${name}</span>`;
+    }
+
+    return `<td style="padding:14px 16px;background:${dc.row};border-left:3px solid ${dc.border};vertical-align:middle">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="background:${dc.badgeBg};color:${dc.badge};font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;letter-spacing:0.04em;white-space:nowrap">${g.div}</span>
+        <span style="font-size:14px">${teamName(g.t1)} <span style="color:var(--muted);font-weight:400;font-size:12px">vs</span> ${teamName(g.t2)}</span>
+      </div>
+    </td>`;
+  }
+
+  let html=`<div class="card" style="padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:0.5px solid var(--border)">
+      <div>
+        <span style="font-size:15px;font-weight:700;color:var(--text)">DRAW — WEEK ${w}${isFinals?' (Finals)':''}</span>
+        <span style="font-size:13px;font-weight:400;color:var(--muted);margin-left:10px">${weekDate}</span>
+      </div>
+      <button class="btn" onclick="printDraw(${w})" style="font-size:12px;padding:5px 12px">Print / Save PDF</button>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--divbg)">
+          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;width:130px;border-bottom:0.5px solid var(--border)">TIME</th>
+          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:#085041;letter-spacing:0.06em;text-transform:uppercase;border-bottom:0.5px solid var(--border)">🏀 COURT 1</th>
+          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:#0C447C;letter-spacing:0.06em;text-transform:uppercase;border-bottom:0.5px solid var(--border)">🏀 COURT 2</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  usedSlots.forEach((slot,i)=>{
     const c1=games.find(g=>g.slot===slot&&g.court==='Court 1');
     const c2=games.find(g=>g.slot===slot&&g.court==='Court 2');
-    html+='<tr style="border-bottom:0.5px solid var(--border)">';
-    html+='<td style="padding:10px 12px;font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap">'+SLOT_LABELS[slot]+'</td>';
-    [c1,c2].forEach((g,ci)=>{
-      const bg=ci===0?'#f9fef9':'#f7fbff';
-      if(g){
-        html+='<td style="padding:10px 12px;background:'+bg+'">';
-        const t1Label=shortName(g.t1)+(g.fillInTeam&&g.fillInTeam.includes(g.t1)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
-        const t2Label=shortName(g.t2)+(g.fillInTeam&&g.fillInTeam.includes(g.t2)?' <span style="color:#BA7517;font-weight:400;font-size:11px">(Fill-in)</span>':'');
-        html+='<div style="font-weight:500;font-size:13px">'+t1Label+' <span style="color:var(--muted);font-weight:400">vs</span> '+t2Label+'</div>';
-        html+='<div style="margin-top:3px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">';
-        html+='<span class="div-badge '+DIV_COLORS[g.div]+'">'+g.div+'</span>';
-        if(g.label)html+='<span style="font-size:11px;color:var(--muted)">'+g.label+'</span>';
-        html+='</div>';
-        html+='</td>';
-      } else {
-        html+='<td style="padding:10px 12px;background:'+bg+';color:#c0bdb5;font-size:12px">—</td>';
-      }
-    });
-    html+='</tr>';
+    const isLast=i===usedSlots.length-1;
+    html+=`<tr style="border-bottom:${isLast?'none':'0.5px solid var(--border)'}">
+      <td style="padding:14px 16px;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;vertical-align:middle">${SLOT_LABELS[slot]}</td>
+      ${gameCell(c1)}
+      ${gameCell(c2)}
+    </tr>`;
   });
 
-  html+='</tbody></table></div>';
+  html+=`</tbody></table></div>`;
 
   if(warnings&&warnings.length){
-    html+='<div style="margin-top:1rem">';
+    html+='<div style="padding:12px 20px;border-top:0.5px solid var(--border)">';
     warnings.forEach(warn=>{
       const isGap=warn.type==='schedule_gap';
-      const color=isGap?'#A32D2D':'#7A5C00';
-      const bg=isGap?'#FCEBEB':'#FAEEDA';
-      html+='<div style="border-left:3px solid '+color+';padding:8px 12px;background:'+bg+';border-radius:0 8px 8px 0;margin-bottom:6px;font-size:12px;color:'+color+'">'+warn.msg+'</div>';
+      const isCoach=warn.type==='coach_clash'||warn.msg.includes('COACH');
+      const color=isCoach?'#A32D2D':isGap?'#A32D2D':'#7A5C00';
+      const bg=isCoach?'#FCEBEB':isGap?'#FCEBEB':'#FAEEDA';
+      html+=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:${bg};border-radius:8px;margin-bottom:6px;font-size:12px;color:${color}">${warn.msg}</div>`;
     });
     html+='</div>';
   }
+
   html+='</div>';
   el.innerHTML=html;
 }

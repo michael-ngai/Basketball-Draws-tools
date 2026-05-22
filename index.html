@@ -1120,7 +1120,7 @@ function generateDraw(){
   // Generate many attempts with different seeds
   const allAttempts=[];
   const conflictAttempts=[];
-  for(let seed=0;seed<16;seed++){
+  for(let seed=0;seed<32;seed++){
     const att=tryBuildDraw(w,JSON.parse(JSON.stringify(rrSnapshot)),seed,false);
     if(att.issues.length===0) allAttempts.push(att);
     else conflictAttempts.push(att);
@@ -1158,7 +1158,13 @@ function generateDraw(){
   function showDebug(attempts){
     if(!attempts||!attempts.length)return;
     const dbg=attempts[0].debugLog||[];
-    const box='<div class="card" style="margin-top:1rem"><div class="section-title">Debug log</div><div style="font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap">'+dbg.join('<br>')+'</div></div>';
+    const box=`<div class="card" style="margin-top:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div class="section-title" style="margin-bottom:0">Debug log</div>
+        <span style="font-size:12px;color:var(--muted)">click to expand ▾</span>
+      </div>
+      <div style="display:none;font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap;margin-top:10px">${dbg.join('<br>')}</div>
+    </div>`;
     document.getElementById('drawOutput').innerHTML+=box;
   }
 
@@ -1193,23 +1199,30 @@ function generateDraw(){
     if(fiGame) correctFillIns[div]=fiGame.fillInTeam[0];
   });
 
-  // Only keep options that have full game counts AND correct fill-in team
+  // Filter: enforce correct game counts for all divs
+  // Strictly enforce U10 fill-in (hard rule), prefer but allow U12/U14 to vary
   const filtered=unique.filter(att=>{
     return ['U10','U12','U14'].every(div=>{
       const divGames=att.scheduled.filter(g=>g.div===div);
-      // Must have correct number of games
-      if(divGames.length<expectedGames[div]) return false;
-      // Must use correct fill-in team (the one that actually plays twice)
-      if(!correctFillIns[div]) return true;
-      // Find who actually plays twice in this draw
-      const pc={};
-      divGames.forEach(g=>{pc[g.t1]=(pc[g.t1]||0)+1;pc[g.t2]=(pc[g.t2]||0)+1;});
-      const actualFI=Object.keys(pc).find(t=>pc[t]>1);
-      if(!actualFI) return true; // even division, no fill-in needed
-      return actualFI===correctFillIns[div];
+      if(divGames.length<expectedGames[div]) return false; // always need full games
+      return true; // game count ok
     });
   });
-  const finalPool=filtered.length>0?filtered:unique;
+
+  // From valid draws, prefer ones with correct U10 fill-in
+  const u10Correct=filtered.filter(att=>{
+    if(!correctFillIns['U10']) return true;
+    const divGames=att.scheduled.filter(g=>g.div==='U10');
+    const pc={};
+    divGames.forEach(g=>{pc[g.t1]=(pc[g.t1]||0)+1;pc[g.t2]=(pc[g.t2]||0)+1;});
+    const actualFI=Object.keys(pc).find(t=>pc[t]>1);
+    return !actualFI||actualFI===correctFillIns['U10'];
+  });
+
+  // Use U10-correct draws if available, otherwise fall back to all valid
+  const finalPool=(u10Correct.length>0?u10Correct:filtered).length>0
+    ?(u10Correct.length>0?u10Correct:filtered)
+    :unique;
 
   // Sort all unique draws: fewest warnings first
   finalPool.sort((a,b)=>warningScore(a)-warningScore(b));

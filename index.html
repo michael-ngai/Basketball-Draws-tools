@@ -514,7 +514,7 @@ function populateWeekSelects(){
     currentWeek=w;
     updateWeekLabels();
     renderAvailTable();
-    document.getElementById('drawOutput').innerHTML='';
+    // Don't clear drawOutput — keep generated draw visible until user generates a new one
     renderWeekGrid('weekGrid',currentWeek,arguments.callee);
   });
   renderWeekGrid('weekGridR', currentWeekR, function(w){
@@ -555,7 +555,7 @@ function weekGridClick(gridId, w){
     currentWeek=w;
     updateWeekLabels();
     renderAvailTable();
-    document.getElementById('drawOutput').innerHTML='';
+    // Don't clear drawOutput — keep generated draw visible until user generates a new one
     renderWeekGrid('weekGrid',currentWeek,grid._onSelect);
   } else {
     currentWeekR=w;
